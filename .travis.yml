@@ -1,0 +1,29 @@
+language: go
+
+go:
+  - '1.10'
+branches:
+  only:
+  - master
+
+deploy:
+  -
+    provider: releases
+    api_key:
+      secure: PiFH86WQxKiAuWnZgmfaWIde9YdrTTYQ1xeCQ87GAtgkqgA4UJAqD78qh1cFX7l4l9QIl6aG0g5IljVC+IKGsk4SJbuJbr25R1qn8AK0DwGbt44FaDNsF+ZKUWfXf30GzfleSUlOzUuPyW6b2WDub8M3Vo9zIrkt/wnSWUjpWopEju+BG9tHUbhiZB3k00Hlm9AFXei2ZcfygQQpHt6xGDaMW3JryUJpE0Jz3PrwNXVSyKLleFZDYETIXL7tcb5HHFybTGf9nwrAQjGb/ZLha3K0FI7zOF1S3hcFTqkAvjxEU4cNVg25ya069NbfYpTpqaKC1GlxSWwlUNvBlGb2c2hAv63/iMr/AjcEDq+Lvui0SJZlg98X0fTfcYXvSwH1KmCyNCOIDmf4dtzRwcRP4jqzQ6txsREn1imC1MjgGCML4ugj2ZIzwAPKOUqTBqvFXfoL0ZPkdADTCH9CM2EDQ3HPBRuR5N4FGlfUoqOzRmIKT79oEg7OK1ElPhSeSukZpOEVMIrV0aQ/UKGBfY19nxU+RbzMtrOsT/IKtL40IZOxRZ2e2+nQa6nb92aCQcP5k4IQp1QFCt64UdMBsz5nD79nRRUmWu8W8nlJKSfl58mHHJbJRaqnnJzS+q5elaRWvDM89otXwb9dOUyETI9NtP1tilE4y5V3SxB+PcPui+c=
+    file:
+      - "dist/kr8_*_checksums.txt"
+      - "dist/kr8_*_darwin_amd64.tar.gz"
+      - "dist/kr8_*_linux_amd64.tar.gz"
+      - "dist/kr8_*_linux_amd64.rpm"
+      - dist/darwin_amd64/kr8
+      - dist/linux_amd64/kr8
+    on:
+      repo: apptio/kr8
+      tags: true
+
+script:
+  - curl -sO http://git.io/goreleaser
+
+notifications:
+  email: false

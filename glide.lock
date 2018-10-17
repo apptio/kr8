@@ -1,0 +1,132 @@
+hash: da04ff52608fdd1ef2a344aaa4b9c118f1646edd25e8a0d47a8e6cdb4afccc1d
+updated: 2018-10-17T14:13:44.472413396-07:00
+imports:
+- name: github.com/fatih/color
+  version: 3f9d52f7176a6927daacff70a3e8d1dc2025c53e
+- name: github.com/fsnotify/fsnotify
+  version: ccc981bf80385c528a65fbfdd49bf2d8da22aa23
+- name: github.com/ghodss/yaml
+  version: c7ce16629ff4cd059ed96ed06419dd3856fd3577
+- name: github.com/gogo/protobuf
+  version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
+  subpackages:
+  - proto
+  - sortkeys
+- name: github.com/golang/glog
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+- name: github.com/google/go-jsonnet
+  version: 2999f7d4f6db53040603e406c3919cb609713beb
+  subpackages:
+  - ast
+  - parser
+- name: github.com/google/gofuzz
+  version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
+- name: github.com/hashicorp/hcl
+  version: 65a6292f0157eff210d03ed1bf6c59b190b8b906
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/printer
+  - hcl/scanner
+  - hcl/strconv
+  - hcl/token
+  - json/parser
+  - json/scanner
+  - json/token
+- name: github.com/hokaccha/go-prettyjson
+  version: f579f869bbfea48a61fbea09207cadd1aaeceb83
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/konsorten/go-windows-terminal-sequences
+  version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
+- name: github.com/magiconair/properties
+  version: c2353362d570a7bfa228149c62842019201cfb71
+- name: github.com/mattn/go-colorable
+  version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
+- name: github.com/mattn/go-isatty
+  version: 3fb116b820352b7f0c281308a4d6250c22d94e27
+- name: github.com/mattn/go-runewidth
+  version: ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb
+- name: github.com/mitchellh/mapstructure
+  version: ce2ff0c13ce509e36e9254c08ea0bca90ed5af6c
+- name: github.com/olekukonko/tablewriter
+  version: be2c049b30ccd4d3fd795d6bf7dce74e42eeedaa
+- name: github.com/pelletier/go-toml
+  version: 78b76feda6f35b2c5c1d283513f6419e59086729
+- name: github.com/Sirupsen/logrus
+  version: 680f584d621da87ee04ea659130e149ba9d23cae
+- name: github.com/spf13/afero
+  version: d40851caa0d747393da1ffb28f7f9d8b4eeffebd
+  subpackages:
+  - mem
+- name: github.com/spf13/cast
+  version: 8965335b8c7107321228e3e3702cab9832751bac
+- name: github.com/spf13/cobra
+  version: ef82de70bb3f60c65fb8eebacbb2d122ef517385
+- name: github.com/spf13/jwalterweatherman
+  version: 4a4406e478ca629068e7768fc33f3f044173c0a6
+- name: github.com/spf13/pflag
+  version: 298182f68c66c05229eb03ac171abe6e309ee79a
+- name: github.com/spf13/viper
+  version: 2c12c60302a5a0e62ee102ca9bc996277c2f64f5
+- name: github.com/tidwall/gjson
+  version: 1e3f6aeaa5bad08d777ea7807b279a07885dd8b2
+- name: github.com/tidwall/match
+  version: 1731857f09b1f38450e2c12409748407822dc6be
+- name: golang.org/x/crypto
+  version: 0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/net
+  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
+  subpackages:
+  - html
+  - html/atom
+  - http2
+  - http2/hpack
+  - idna
+  - lex/httplex
+  - websocket
+- name: golang.org/x/sys
+  version: e4b3c5e9061176387e7cea65e4dc5853801f3fb7
+  subpackages:
+  - unix
+  - windows
+- name: golang.org/x/text
+  version: b19bf474d317b857955b12035d2c5acb57ce8b01
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+- name: gopkg.in/inf.v0
+  version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
+- name: gopkg.in/yaml.v2
+  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
+- name: k8s.io/apimachinery
+  version: 60666be32c5de527b69dabe8e4400b4f0aa897de
+  subpackages:
+  - pkg/api/resource
+  - pkg/apis/meta/v1
+  - pkg/apis/meta/v1/unstructured
+  - pkg/conversion
+  - pkg/conversion/queryparams
+  - pkg/fields
+  - pkg/labels
+  - pkg/runtime
+  - pkg/runtime/schema
+  - pkg/selection
+  - pkg/types
+  - pkg/util/errors
+  - pkg/util/intstr
+  - pkg/util/json
+  - pkg/util/naming
+  - pkg/util/net
+  - pkg/util/runtime
+  - pkg/util/sets
+  - pkg/util/validation
+  - pkg/util/validation/field
+  - pkg/util/yaml
+  - pkg/watch
+  - third_party/forked/golang/reflect
+testImports: []

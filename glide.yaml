@@ -1,0 +1,24 @@
+package: github.com/apptio/kr8
+import:
+- package: github.com/Sirupsen/logrus
+  version: ^1.1.1
+- package: github.com/fatih/color
+  version: ^1.7.0
+- package: github.com/ghodss/yaml
+  version: ^1.0.0
+- package: github.com/google/go-jsonnet
+  version: ^0.11.2
+  subpackages:
+  - ast
+- package: github.com/hokaccha/go-prettyjson
+- package: github.com/olekukonko/tablewriter
+- package: github.com/spf13/cobra
+  version: ^0.0.3
+- package: github.com/spf13/viper
+  version: ^1.2.1
+- package: github.com/tidwall/gjson
+  version: ^1.1.3
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/apis/meta/v1/unstructured
+  - pkg/util/yaml
