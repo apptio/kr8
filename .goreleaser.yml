@@ -1,0 +1,11 @@
+builds:
+  - main: main.go
+    binary: kr8
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+# Archive customization
+archive:
+  format: tar.gz
