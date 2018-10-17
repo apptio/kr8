@@ -1,0 +1,6 @@
+--
+This product includes portions of the kubecfg project
+
+Copyright 2018 Kubecfg.
+
+Licensed under the Apache License v2.0
