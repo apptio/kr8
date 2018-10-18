@@ -37,8 +37,22 @@ dist: dist
 dockers:
   -
     image: apptio/kr8
+    dockerfile: Dockerfile-goreleaser
+    tag_templates:
+    - "{{ .Tag }}"
+    - latest
     build_flag_templates:
-      - "--build-arg=VERSION={{.Tag}}"
       - "--label=org.label-schema.schema-version=1.0"
       - "--label=org.label-schema.version={{.Version}}"
       - "--label=org.label-schema.name={{.ProjectName}}"
+brew:
+  github:
+    owner: apptio
+    name: homebrew-tap
+
+  commit_author:
+    name: release
+    email: release@apptio.com
+
+  homepage: "https://github.com/apptio/kr8"
+  description: "Opinionated configuration management tool for Kubernetes Cluster"

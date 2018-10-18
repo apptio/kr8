@@ -8,6 +8,7 @@ ARG VERSION
 
 RUN apk add --no-cache git curl \
     && curl https://glide.sh/get | sh \
+    && ls . \
     && glide i \
     && go build -o kr8 -ldflags "-X main.version=${VERSION}"
 
