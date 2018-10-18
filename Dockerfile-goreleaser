@@ -1,3 +1,9 @@
-FROM scratch
-COPY kr8 /
-ENTRYPOINT ["/kr8"]
+FROM golang:1.10.4-alpine3.8
+
+WORKDIR /app
+
+COPY ./kr8 /app
+
+RUN ls /app
+
+ENTRYPOINT ["/app/kr8"]
