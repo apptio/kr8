@@ -64,7 +64,6 @@ func Execute(version string) {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kr8.yaml)")
 	RootCmd.PersistentFlags().StringVarP(&base, "base", "d", ".", "kr8 config base directory")
 	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing")
 	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", false, "enable colorized output")
