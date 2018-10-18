@@ -1,29 +1,31 @@
 language: go
-
+sudo: required
+services:
+- docker
 go:
-  - '1.10'
+- '1.10'
 branches:
   only:
   - master
-
 deploy:
-  -
-    provider: releases
-    api_key:
-      secure: PiFH86WQxKiAuWnZgmfaWIde9YdrTTYQ1xeCQ87GAtgkqgA4UJAqD78qh1cFX7l4l9QIl6aG0g5IljVC+IKGsk4SJbuJbr25R1qn8AK0DwGbt44FaDNsF+ZKUWfXf30GzfleSUlOzUuPyW6b2WDub8M3Vo9zIrkt/wnSWUjpWopEju+BG9tHUbhiZB3k00Hlm9AFXei2ZcfygQQpHt6xGDaMW3JryUJpE0Jz3PrwNXVSyKLleFZDYETIXL7tcb5HHFybTGf9nwrAQjGb/ZLha3K0FI7zOF1S3hcFTqkAvjxEU4cNVg25ya069NbfYpTpqaKC1GlxSWwlUNvBlGb2c2hAv63/iMr/AjcEDq+Lvui0SJZlg98X0fTfcYXvSwH1KmCyNCOIDmf4dtzRwcRP4jqzQ6txsREn1imC1MjgGCML4ugj2ZIzwAPKOUqTBqvFXfoL0ZPkdADTCH9CM2EDQ3HPBRuR5N4FGlfUoqOzRmIKT79oEg7OK1ElPhSeSukZpOEVMIrV0aQ/UKGBfY19nxU+RbzMtrOsT/IKtL40IZOxRZ2e2+nQa6nb92aCQcP5k4IQp1QFCt64UdMBsz5nD79nRRUmWu8W8nlJKSfl58mHHJbJRaqnnJzS+q5elaRWvDM89otXwb9dOUyETI9NtP1tilE4y5V3SxB+PcPui+c=
-    file:
-      - "dist/kr8_*_checksums.txt"
-      - "dist/kr8_*_darwin_amd64.tar.gz"
-      - "dist/kr8_*_linux_amd64.tar.gz"
-      - "dist/kr8_*_linux_amd64.rpm"
-      - dist/darwin_amd64/kr8
-      - dist/linux_amd64/kr8
-    on:
-      repo: apptio/kr8
-      tags: true
-
+- provider: releases
+  api_key:
+    secure: PiFH86WQxKiAuWnZgmfaWIde9YdrTTYQ1xeCQ87GAtgkqgA4UJAqD78qh1cFX7l4l9QIl6aG0g5IljVC+IKGsk4SJbuJbr25R1qn8AK0DwGbt44FaDNsF+ZKUWfXf30GzfleSUlOzUuPyW6b2WDub8M3Vo9zIrkt/wnSWUjpWopEju+BG9tHUbhiZB3k00Hlm9AFXei2ZcfygQQpHt6xGDaMW3JryUJpE0Jz3PrwNXVSyKLleFZDYETIXL7tcb5HHFybTGf9nwrAQjGb/ZLha3K0FI7zOF1S3hcFTqkAvjxEU4cNVg25ya069NbfYpTpqaKC1GlxSWwlUNvBlGb2c2hAv63/iMr/AjcEDq+Lvui0SJZlg98X0fTfcYXvSwH1KmCyNCOIDmf4dtzRwcRP4jqzQ6txsREn1imC1MjgGCML4ugj2ZIzwAPKOUqTBqvFXfoL0ZPkdADTCH9CM2EDQ3HPBRuR5N4FGlfUoqOzRmIKT79oEg7OK1ElPhSeSukZpOEVMIrV0aQ/UKGBfY19nxU+RbzMtrOsT/IKtL40IZOxRZ2e2+nQa6nb92aCQcP5k4IQp1QFCt64UdMBsz5nD79nRRUmWu8W8nlJKSfl58mHHJbJRaqnnJzS+q5elaRWvDM89otXwb9dOUyETI9NtP1tilE4y5V3SxB+PcPui+c=
+  file:
+  - dist/kr8_*_checksums.txt
+  - dist/kr8_*_darwin_amd64.tar.gz
+  - dist/kr8_*_linux_amd64.tar.gz
+  - dist/kr8_*_linux_amd64.rpm
+  - dist/darwin_amd64/kr8
+  - dist/linux_amd64/kr8
+  on:
+    repo: apptio/kr8
+    tags: true
 script:
   - curl -sO http://git.io/goreleaser
-
 notifications:
   email: false
+env:
+  global:
+  - secure: Ua1Zp6GZbS0Bl0Em/rV7kVZHRy8iNOMc9uHariaMu6HGP8BA61y+nE5ml/hTn8HgSqTLmaIMIUw7/Jxoh0lVEecU8i35MyZ1GJIelwkGaWAS81iRkE/p2NFLTSSWzHMdfbK9gua/kOUEH/5h0O9BNjm7dLK+GY6JWHk1HDaN8zjI+DwPATBZf0iyWfqF9NxaMKgihGxYSj2XsVdm+QSK902BCu0BT7rCFcuDR5suuH1ffjNHuX9o4vorehC3BhD5hrFU/XJ9AIUb6SxJhT6z86b13MrJSqzBuPn/3yvpI7cXXLBYT76EV/UN/d/PdslXQ47OUSe2wN9kKM5zlEjCF8wKUaAeCYQQLjmXJWGddgjDKSDMbyy/0vAw6oT7ygQpcIjj1YIVztGjPpX4RLe3T1ZYlADClkY033v0LmWZ/ShN5Vs4UyFajD6iivhBz+MVGrUqVo688BN0gzA8ZSGgEeNHpyjkP+JppmhGFzNwimjdlCefANUEHhd+/EuQ0VMkEbbYVnZqpQq11i8G4d01S1mNm6PgqC/LygLgxG8NU0lvp5yiW1PkFNW9xl8CW5SscH4zV8fO67LHvai+WG/GwyNllsfjAlGXx3jYy8oybLOecCsSSe65aJq/CCs7CJCvWdquiBGKlfr+w45xbOj+cbBj1tAkB9S7V8H6JOcfRgE=
+  - secure: FLmo3wbA7yzL3S40pCoDeg49SFdCYb+jsiL4gUYEYHxLmw/8CT+T4xJKgLp7eyPw859RbiShvYp9eyG+RLqKd4Lt0KfFDh/HXV20pMD6gngYOMMyuHoM4rm/pTXhG34zqPBzVHqe7Ols52wEGkiQA6/EOb1M6Y50dsai2+niYyN/XFUrjv/09xML4GUhlOd3vh2BxEbROmIEQEbBJA/Bdql9PBo5p4/btCs/ws2X/JFKpngL2XXXPnvIC8UQQuJEDhskOjNID5omqO2PON0GyZ6DOWIrQbpEzx8eXGJ1LH+M5EtO+DkvC1swNATaKkgkWrHkQYTX6su5mtyyaK+rlhGXbhYDQbYpD+r7HnoUOurfKTdd5AdFZIvYX8uvMt+xPaITFQ1B6umEsO5zZGEW+rVpK3v23dU/aV0jrQ84x2tYWXXMLMyG4dP8VWcK1foGEENwNaCSX0IibqB8FcA8HdeJiqrxuzNyy9Y5pgu9rBZnsJv6qDlGspoTCzmdqq8fUz8kVxUqzWcRMob5mHZP1rBkOR7B1NSDYKMIdW2yEYqeEjQ4hW9t4LMuCjlxFXNWfDx40GFdDGzJ5S/idQuDfdLiVHsOFH8O5/E+kjmUcQ9gA0Q5DeEkth9v+8BjhVchk+cwmGC+moXWYsKkmTG2MbiYwBBQUcySsQCRbHEatH0=
