@@ -7,6 +7,11 @@ services:
 - docker
 after_success:
 - test -n "$TRAVIS_TAG" && docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+
+before_install:
+  - curl https://glide.sh/get | sh
+  - glide i
+
 deploy:
 - provider: script
   skip_cleanup: true
