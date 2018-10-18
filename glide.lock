@@ -1,12 +1,12 @@
-hash: da04ff52608fdd1ef2a344aaa4b9c118f1646edd25e8a0d47a8e6cdb4afccc1d
-updated: 2018-10-17T14:13:44.472413396-07:00
+hash: ec50b9bbd243f4ff54a1bfd112b18f22294e075de0657bc2ee97b4a35b244c04
+updated: 2018-10-18T08:30:33.336324986-07:00
 imports:
 - name: github.com/fatih/color
-  version: 3f9d52f7176a6927daacff70a3e8d1dc2025c53e
+  version: 5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4
 - name: github.com/fsnotify/fsnotify
   version: ccc981bf80385c528a65fbfdd49bf2d8da22aa23
 - name: github.com/ghodss/yaml
-  version: c7ce16629ff4cd059ed96ed06419dd3856fd3577
+  version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -15,7 +15,7 @@ imports:
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/google/go-jsonnet
-  version: 2999f7d4f6db53040603e406c3919cb609713beb
+  version: 6144c57d2a054b72ff46219f655bf863b940e174
   subpackages:
   - ast
   - parser
@@ -54,7 +54,7 @@ imports:
 - name: github.com/pelletier/go-toml
   version: 78b76feda6f35b2c5c1d283513f6419e59086729
 - name: github.com/Sirupsen/logrus
-  version: 680f584d621da87ee04ea659130e149ba9d23cae
+  version: ad15b42461921f1fb3529b058c6786c6a45d5162
 - name: github.com/spf13/afero
   version: d40851caa0d747393da1ffb28f7f9d8b4eeffebd
   subpackages:
