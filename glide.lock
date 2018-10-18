@@ -1,12 +1,53 @@
 hash: ec50b9bbd243f4ff54a1bfd112b18f22294e075de0657bc2ee97b4a35b244c04
-updated: 2018-10-18T08:30:33.336324986-07:00
+updated: 2018-10-18T15:29:26.86607698-07:00
 imports:
+- name: github.com/aws/aws-sdk-go
+  version: 0e8c61841163762f870f6976775800ded4a789b0
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/csm
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - internal/s3err
+  - internal/sdkio
+  - internal/sdkrand
+  - internal/sdkuri
+  - internal/shareddefaults
+  - private/protocol
+  - private/protocol/eventstream
+  - private/protocol/eventstream/eventstreamapi
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - service/s3
+  - service/sts
+- name: github.com/bgentry/go-netrc
+  version: 9fd32a8b3d3d3f9d43c341bfe098430e07609480
+  subpackages:
+  - netrc
 - name: github.com/fatih/color
   version: 5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4
 - name: github.com/fsnotify/fsnotify
   version: ccc981bf80385c528a65fbfdd49bf2d8da22aa23
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
+- name: github.com/go-ini/ini
+  version: 9c8236e659b76e87bf02044d06fde8683008ff3e
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -21,6 +62,16 @@ imports:
   - parser
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
+- name: github.com/hashicorp/go-cleanhttp
+  version: e8ab9daed8d1ddd2d3c4efba338fe2eeae2e4f18
+- name: github.com/hashicorp/go-getter
+  version: 4bda8fa99001c61db3cad96b421d4c12a81f256d
+  subpackages:
+  - helper/url
+- name: github.com/hashicorp/go-safetemp
+  version: c9a55de4fe06c920a71964b53cfe3dd293a3c743
+- name: github.com/hashicorp/go-version
+  version: b5a281d3160aa11950a6182bd9a9dc2cb1e02d50
 - name: github.com/hashicorp/hcl
   version: 65a6292f0157eff210d03ed1bf6c59b190b8b906
   subpackages:
@@ -37,6 +88,8 @@ imports:
   version: f579f869bbfea48a61fbea09207cadd1aaeceb83
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/jmespath/go-jmespath
+  version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/konsorten/go-windows-terminal-sequences
   version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
 - name: github.com/magiconair/properties
@@ -47,6 +100,10 @@ imports:
   version: 3fb116b820352b7f0c281308a4d6250c22d94e27
 - name: github.com/mattn/go-runewidth
   version: ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb
+- name: github.com/mitchellh/go-homedir
+  version: ae18d6b8b3205b561c79e8e5f69bff09736185f4
+- name: github.com/mitchellh/go-testing-interface
+  version: 6d0b8010fcc857872e42fc6c931227569016843c
 - name: github.com/mitchellh/mapstructure
   version: ce2ff0c13ce509e36e9254c08ea0bca90ed5af6c
 - name: github.com/olekukonko/tablewriter
@@ -73,6 +130,12 @@ imports:
   version: 1e3f6aeaa5bad08d777ea7807b279a07885dd8b2
 - name: github.com/tidwall/match
   version: 1731857f09b1f38450e2c12409748407822dc6be
+- name: github.com/ulikunitz/xz
+  version: 636d36a76670e6c700f22fd5f4588679ff2896c4
+  subpackages:
+  - internal/hash
+  - internal/xlog
+  - lzma
 - name: golang.org/x/crypto
   version: 0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb
   subpackages:
