@@ -1,0 +1,3 @@
+FROM scratch
+COPY kr8 /
+ENTRYPOINT ["/kr8"]
