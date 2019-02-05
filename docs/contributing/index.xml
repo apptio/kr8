@@ -2,12 +2,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Contributing on kr8 documentation</title>
-    <link>http://apptio.github.io/kr8/contributing/</link>
+    <link>https://apptio.github.io/kr8/contributing/</link>
     <description>Recent content in Contributing on kr8 documentation</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="http://apptio.github.io/kr8/contributing/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://apptio.github.io/kr8/contributing/index.xml" rel="self" type="application/rss+xml" />
     
     
   </channel>

@@ -2,20 +2,20 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Components on kr8 documentation</title>
-    <link>http://apptio.github.io/kr8/advanced/components/</link>
+    <link>https://apptio.github.io/kr8/advanced/components/</link>
     <description>Recent content in Components on kr8 documentation</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="http://apptio.github.io/kr8/advanced/components/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://apptio.github.io/kr8/advanced/components/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Helm Components</title>
-      <link>http://apptio.github.io/kr8/advanced/components/helm/</link>
+      <link>https://apptio.github.io/kr8/advanced/components/helm/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://apptio.github.io/kr8/advanced/components/helm/</guid>
+      <guid>https://apptio.github.io/kr8/advanced/components/helm/</guid>
       <description></description>
     </item>
     
