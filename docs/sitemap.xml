@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/about/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/advanced/components/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/concepts/components/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/concepts/clusters/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/advanced/components/helm/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/installation/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/concepts/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/getting-started/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/advanced/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/contributing/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/_footer/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/</loc>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://apptio.github.io/kr8/tags/</loc>
+    <priority>0</priority>
+  </url>
+  
+</urlset>

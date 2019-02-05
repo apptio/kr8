@@ -1,0 +1,99 @@
+[
+{
+	"uri": "http://apptio.github.io/kr8/about/",
+	"title": "About",
+	"tags": [],
+	"description": "",
+	"content": " Overview kr8 is a configuration management tool for Kubernetes, designed to generate deployable manifests for the components required to make your clusters usable.\nIts main function is to translate and manipulate YAML or JSON without using a templating engine.\nIts flexibility means you can perform operations such as:\n Use existing helm charts, and patch the resources in them Use other overlay tools, like Kustomize Create resources in pure JSON or Jsonnet  Goals \u0026amp; Focus The focus with kr8 is not to make deploying applications easier. We believe this problem is already being tackled quite widely and with excellent success rates.\nThe main aim of kr8 is to allow Cluster operators to generate the manifests needed to deploy key cluster components to different clusters.\nIt\u0026rsquo;s designed to prevent configuration mismatches between (for example) development and production clusters and to prevent snowflake cluster deployments.\n"
+},
+{
+	"uri": "http://apptio.github.io/kr8/advanced/components/",
+	"title": "Components",
+	"tags": [],
+	"description": "",
+	"content": ""
+},
+{
+	"uri": "http://apptio.github.io/kr8/concepts/components/",
+	"title": "Components",
+	"tags": [],
+	"description": "",
+	"content": " Components "
+},
+{
+	"uri": "http://apptio.github.io/kr8/concepts/clusters/",
+	"title": "Clusters",
+	"tags": [],
+	"description": "",
+	"content": " Components "
+},
+{
+	"uri": "http://apptio.github.io/kr8/advanced/components/helm/",
+	"title": "Helm Components",
+	"tags": [],
+	"description": "",
+	"content": ""
+},
+{
+	"uri": "http://apptio.github.io/kr8/installation/",
+	"title": "Installation",
+	"tags": [],
+	"description": "",
+	"content": " Installation Github Releases We build binaries for OS X and Linux using goreleaser\nSimply head over to the releases page to grab the latest version.\nHomebrew We maintain a homebrew tap which makes installing on OS X a breeze. Simply add the tap and install:\nbrew tap apptio/tap brew install kr8 Dependencies The kr8 binary is currently just one of a set of required dependencies. We plan to explore the need for these dependencies as time goes on, but right now, yhey are required.\ngo-task go-task is used inside components and for cluster config generation. It was chosen over Make because it supports parallel builds and JSON files as input (meaning we can use jsonnet to build the files, if needed).\nInstallation Check out the go-task install docs for information on installing go-task\nHelm If you plan on rendering and manipulating helm charts in your kr8-configs, you\u0026rsquo;ll need the helm command line tool installed.\nInstallation Check out the helm installation docs for information on installing go-task\nHelm will not work unless you initialize it on your client machine.\nBy default, it\u0026rsquo;ll ask you to run helm init - which will install the tiller component and presents a security risk\nYou should use helm init --client-only for kr8\n "
+},
+{
+	"uri": "http://apptio.github.io/kr8/concepts/",
+	"title": "Concepts",
+	"tags": [],
+	"description": "",
+	"content": "kr8 has two main concepts you should be aware of before you get started:\n components clusters  The relationship between components and clusters are simple: components are installed on clusters. You will have components that are install on all clusters, and some components will only be installed on some clusters.\nComponents can be declared multiple times within a cluster, as long as they are named distinctly.\nClusters are unique and singular\nRead more about components and clusters\n"
+},
+{
+	"uri": "http://apptio.github.io/kr8/getting-started/",
+	"title": "Getting Started",
+	"tags": [],
+	"description": "",
+	"content": " Initializing your Config Adding a Component Adding a Cluster Add Component to Cluster Generate your Manifests "
+},
+{
+	"uri": "http://apptio.github.io/kr8/advanced/",
+	"title": "Advanced",
+	"tags": [],
+	"description": "",
+	"content": " Multiple Components in a Cluster Sealed Secrets "
+},
+{
+	"uri": "http://apptio.github.io/kr8/contributing/",
+	"title": "Contributing",
+	"tags": [],
+	"description": "",
+	"content": " Building from Source "
+},
+{
+	"uri": "http://apptio.github.io/kr8/_footer/",
+	"title": "",
+	"tags": [],
+	"description": "",
+	"content": "Made with love @apptio\n"
+},
+{
+	"uri": "http://apptio.github.io/kr8/",
+	"title": "",
+	"tags": [],
+	"description": "",
+	"content": " kr8 Welcome to the kr8 documentation site.\nIf you\u0026rsquo;re new to kr8, head over to the About section to learn why we built kr8 or the Installation section for more on installing kr8.\n"
+},
+{
+	"uri": "http://apptio.github.io/kr8/categories/",
+	"title": "Categories",
+	"tags": [],
+	"description": "",
+	"content": ""
+},
+{
+	"uri": "http://apptio.github.io/kr8/tags/",
+	"title": "Tags",
+	"tags": [],
+	"description": "",
+	"content": ""
+}]

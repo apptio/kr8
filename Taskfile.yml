@@ -1,0 +1,13 @@
+version: '2'
+
+
+
+tasks:
+  web:
+    desc: Build website assets
+    env:
+      URL: http://apptio.github.io/kr8
+    cmds:
+      - echo $URL
+      - hugo -s website -b $URL -d ../docs
+
