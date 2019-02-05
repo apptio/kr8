@@ -6,7 +6,7 @@ tasks:
   web:
     desc: Build website assets
     env:
-      URL: https://apptio.github.io/kr8
+      URL: https://kr8.rocks
     cmds:
       - echo $URL
       - hugo -s website -b $URL -d ../docs
