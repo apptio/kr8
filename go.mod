@@ -1,0 +1,49 @@
+module github.com/apptio/kr8
+
+require (
+	github.com/aws/aws-sdk-go v0.0.0-20181018204443-0e8c61841163
+	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
+	github.com/fatih/color v1.7.0
+	github.com/fsnotify/fsnotify v1.4.7
+	github.com/ghodss/yaml v1.0.0
+	github.com/go-ini/ini v1.39.0
+	github.com/gogo/protobuf v0.0.0-20171007142547-342cbe0a0415
+	github.com/golang/glog v0.0.0-20141105023935-44145f04b68c
+	github.com/google/go-jsonnet v0.11.2
+	github.com/google/gofuzz v0.0.0-20161122191042-44d81051d367
+	github.com/hashicorp/go-cleanhttp v0.5.0
+	github.com/hashicorp/go-getter v0.0.0-20180809191950-4bda8fa99001
+	github.com/hashicorp/go-safetemp v1.0.0
+	github.com/hashicorp/go-version v1.0.0
+	github.com/hashicorp/hcl v1.0.0
+	github.com/hokaccha/go-prettyjson v0.0.0-20180920040306-f579f869bbfe
+	github.com/inconshreveable/mousetrap v1.0.0
+	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
+	github.com/konsorten/go-windows-terminal-sequences v1.0.1
+	github.com/magiconair/properties v1.8.0
+	github.com/mattn/go-colorable v0.1.0
+	github.com/mattn/go-isatty v0.0.0-20180830101745-3fb116b82035
+	github.com/mattn/go-runewidth v0.0.3
+	github.com/mitchellh/go-homedir v1.0.0
+	github.com/mitchellh/go-testing-interface v1.0.0
+	github.com/mitchellh/mapstructure v1.0.0
+	github.com/olekukonko/tablewriter v0.0.0-20180912035003-be2c049b30cc
+	github.com/pelletier/go-toml v1.2.0
+	github.com/sirupsen/logrus v1.1.1
+	github.com/spf13/afero v1.1.2
+	github.com/spf13/cast v1.2.0
+	github.com/spf13/cobra v0.0.3
+	github.com/spf13/jwalterweatherman v1.0.0
+	github.com/spf13/pflag v1.0.3
+	github.com/spf13/viper v1.2.1
+	github.com/tidwall/gjson v1.1.3
+	github.com/tidwall/match v1.0.0
+	github.com/ulikunitz/xz v0.0.0-20180703112113-636d36a76670
+	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e
+	golang.org/x/net v0.0.0-20170809000501-1c05540f6879
+	golang.org/x/sys v0.0.0-20180928133829-e4b3c5e90611
+	golang.org/x/text v0.3.0
+	gopkg.in/inf.v0 v0.9.0
+	gopkg.in/yaml.v2 v2.2.1
+	k8s.io/apimachinery v0.0.0-20181015213631-60666be32c5d
+)

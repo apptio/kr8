@@ -23,7 +23,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	gyaml "github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"io"

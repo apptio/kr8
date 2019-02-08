@@ -1,15 +1,13 @@
-FROM golang:1.10.4-alpine3.8
+FROM golang:1.11.4-alpine3.8
 
-WORKDIR /go/src/github.com/apptio/kr8
+WORKDIR /app
 
-COPY . /go/src/github.com/apptio/kr8
+COPY . /app
 
 ARG VERSION
 
-RUN apk add --no-cache git curl \
-    && curl https://glide.sh/get | sh \
-    && ls . \
-    && glide i \
+RUN apk add git build-base \
+    && go mod download \
     && go build -o kr8 -ldflags "-X main.version=${VERSION}"
 
-ENTRYPOINT ["./kr8"]
+ENTRYPOINT ["/app/kr8"]

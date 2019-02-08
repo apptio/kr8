@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/fatih/color"
 	"github.com/hokaccha/go-prettyjson"
 )
