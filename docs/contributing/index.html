@@ -5,7 +5,7 @@
     
       <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="revised" content="2019-02-05T11:23:04 CET">
+<meta name="revised" content="2019-02-08T15:46:59 PST">
 <title>Contributing :: kr8 documentation</title>
 <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
 <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -183,6 +183,28 @@
 
 
 <h1 id="building-from-source">Building from Source</h1>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>kr8 uses <a href="https://github.com/golang/go/wiki/Modules">Go modules</a> for its dependencies, so there&rsquo;s no longer any need to clone into your <code>$GOPATH</code>.</p>
+
+<p>Simply clone into any directory and then download the modules:</p>
+
+<pre><code>git clone https://github.com/apptio/kr8.git
+go mod download
+</code></pre>
+
+<h2 id="building">Building</h2>
+
+<p>Once you&rsquo;ve downloaded all the dependencies, you should be able to build easily:</p>
+
+<pre><code>go build -o kr8
+</code></pre>
+
+<p>We use <a href="https://goreleaser.com">goreleaser</a> for building the final binaries, so if you&rsquo;d like to build a snapshot version, simple run:</p>
+
+<pre><code>goreleaser --skip-publish --snapshot --rm-dist
+</code></pre>
 
 
 

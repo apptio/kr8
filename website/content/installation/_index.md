@@ -21,6 +21,8 @@ brew tap apptio/tap
 brew install kr8
 ```
 
+The homebrew tap will install the below dependencies for you. If you're using anything other than homebrew, you'll need to ensure you have the dependencies below
+
 # Dependencies
 
 The kr8 binary is currently just one of a set of required dependencies. We plan to explore the need for these dependencies as time goes on, but right now, yhey are required.
