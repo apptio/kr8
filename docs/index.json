@@ -53,7 +53,7 @@
 	"title": "Getting Started",
 	"tags": [],
 	"description": "",
-	"content": " Initializing your Config Adding a Component Adding a Cluster Add Component to Cluster Generate your Manifests "
+	"content": " Initializing your Config Starting in v0.0.2, kr8 includes an init command which will initialize your cluster config for you.\nkr8 init repo \u0026lt;/path/to/repo\u0026gt; This simply downloads the skeletion config from here\nYou can also recreate this by running:\ngit clone https://github.com/apptio/kr8-config-skel.git \u0026lt;/path/to/repo\u0026gt; Adding a Component Adding a Cluster Add Component to Cluster Generate your Manifests "
 },
 {
 	"uri": "https://kr8.rocks/advanced/",

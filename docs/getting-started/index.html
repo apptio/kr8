@@ -5,7 +5,7 @@
     
       <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="revised" content="2019-02-08T15:46:59 PST">
+<meta name="revised" content="2019-02-08T15:53:34 PST">
 <title>Getting Started :: kr8 documentation</title>
 <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
 <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -184,6 +184,12 @@
 
 <h1 id="initializing-your-config">Initializing your Config</h1>
 
+<p>Starting in v0.0.2, kr8 includes an <code>init</code> command which will initialize your cluster config for you.</p>
+<div class="highlight"><pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kr8 init repo &lt;/path/to/repo&gt;</code></pre></div>
+<p>This simply downloads the skeletion config from <a href="https://github.com/apptio/kr8-config-skel">here</a></p>
+
+<p>You can also recreate this by running:</p>
+<div class="highlight"><pre style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git clone https://github.com/apptio/kr8-config-skel.git &lt;/path/to/repo&gt;</code></pre></div>
 <h1 id="adding-a-component">Adding a Component</h1>
 
 <h1 id="adding-a-cluster">Adding a Cluster</h1>
