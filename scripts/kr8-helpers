@@ -1,0 +1,184 @@
+#!/bin/bash
+
+set -euo pipefail
+
+fail()
+{
+  echo "$0: FATAL: $*"
+  exit 1
+}
+
+check-environment()
+{
+  set +u
+  if [ -z "$KR8_BASE" ]
+  then
+    fail "KR8_BASE environment variable must be set"
+  fi
+  if [ -z "$KR8_JSONNET_ARGS" ]
+  then
+    KR8_JSONNET_ARGS=
+  fi
+  if [ ! -z "$KR8_TRACE" ]
+  then
+    set -x
+  fi
+  # add shared libsonnet dir to kr8's jsonnet search path
+  if [ -z "$KR8_JPATH" ]
+  then
+    export KR8_JPATH="${KR8_BASE}/lib"
+  fi
+  set -u
+}
+
+set-output()
+{
+  # globals 
+  outputDir="${KR8_BASE}/generated/${KR8_CLUSTER}/${KR8_COMPONENT}"
+  metaDir="${KR8_BASE}/metadata//${KR8_CLUSTER}/${KR8_COMPONENT}"
+}
+
+clean-output()
+{
+  set-output
+  # Clean output directory, since we will replace its contents
+  rm -fr $outputDir $metaDir
+  mkdir -p $outputDir $metaDir
+}
+
+_helm-render() {
+  local _chart="$1"
+  local _outfile="$2"
+
+  # render helm values for the chart
+  kr8 jsonnet render --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --format yaml $KR8_JSONNET_ARGS "${_chart}-values.jsonnet" > "$metaDir/${_chart}-values.jsonnet"
+  # render chart
+  local releasename=$(kr8 cluster params --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --param "${KR8_COMPONENT}.release_name" --notunset)
+  local namespace=$(kr8 cluster params --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --param "${KR8_COMPONENT}.namespace" --notunset)
+
+  # record metadata
+  set-meta 
+
+  helm template --name "$releasename" --namespace "$namespace" --values  "$metaDir/${_chart}-values.jsonnet" "./charts/${_chart}" | kr8 yaml helmclean > "$_outfile"
+}
+
+helm-render() {
+  local _chart="$1"
+  local tmpfile
+
+  check-environment
+  set-output
+
+  tmpfile=$(mktemp)
+  _helm-render "$_chart" "$tmpfile"
+   kr8 jsonnet render --prune=false --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --format stream $KR8_JSONNET_ARGS $KR8_BASE/lib/addnamespace.jsonnet  --ext-str-file inputYaml="$tmpfile" > "$outputDir/${_chart}.yaml"
+   rm -f "$tmpfile"
+}
+
+set-meta(){
+  check-environment
+  set-output
+
+  local namespace
+  local releasename
+  namespace=$(set -eu; kr8 cluster params --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --param "${KR8_COMPONENT}.namespace" --notunset)
+  releasename=$(kr8 cluster params --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --param "${KR8_COMPONENT}.release_name" --notunset)
+  kubecfg_gc_enable=$(kr8 cluster params --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --param "${KR8_COMPONENT}.kubecfg_gc_enable")
+
+  echo "$namespace" > "$metaDir/namespace_default"
+  echo "${KR8_COMPONENT}_${namespace}_${releasename}" > "$metaDir/gc_tag"
+
+  # this file indicates that gc should be used
+  if [ ! -z "$kubecfg_gc_enable" -a "$kubecfg_gc_enable" != "false" ]
+  then
+    echo "$kubecfg_gc_enable" > "$metaDir/gc_enable"
+  else
+    rm -f "$metaDir/gc_enable"
+  fi
+
+  kubecfg_update_args=$(kr8 cluster params --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --param "${KR8_COMPONENT}.kubecfg_update_args")
+  if [ ! -z "$kubecfg_update_args" ]
+  then 
+    echo  "$kubecfg_update_args" > "$metaDir/kubecfg_update_args"
+  fi
+}
+
+
+# Render a helm chart, and post-process with a jsonnet patch
+helm-render-with-patch() {
+  set -x
+  local _chart="$1"
+  local _patch="$2"
+  local tmpfile
+  local tmpfile2
+
+  check-environment
+  set-output
+
+  tmpfile=$(mktemp)
+  tmpfile2=$(mktemp)
+  _helm-render "$_chart" "$tmpfile"
+  kr8 jsonnet render --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --format stream $KR8_JSONNET_ARGS patches.jsonnet  --ext-str-file inputYaml="$tmpfile" > "$tmpfile2"
+  rm -f $tmpfile 
+  kr8 jsonnet render --prune=false --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --format stream $KR8_JSONNET_ARGS $KR8_BASE/lib/addnamespace.jsonnet  --ext-str-file inputYaml="$tmpfile2" > "$outputDir/${_chart}.yaml"
+  rm -f $tmpfile2
+}
+
+yaml-install() {
+  check-environment
+  set-output
+  set-meta
+
+  # copy each yaml file to the output directory, passing htem through helmclean, which validates that they are k8s resources
+  for yaml in "$@"
+  do
+    local outf
+    outf=$(basename $yaml)
+    kr8 jsonnet render --prune=false --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --format stream $KR8_JSONNET_ARGS $KR8_BASE/lib/addnamespace.jsonnet  --ext-str-file inputYaml="$yaml" > "$outputDir/$outf"
+#    kr8 yaml helmclean < "$yaml" > "$outputDir/$outf"
+  done
+}
+
+jsonnet-render() {
+  set -x
+  check-environment
+  set-output
+  set-meta
+  local tmpfile
+
+  # Process each jsonnet file, and output yaml stream to output directory
+  # The jsonnet files must output a list of objects
+  tmpfile=$(mktemp)
+  for jsonnet in "$@"
+  do
+    local outf
+    outf=$(basename $jsonnet | sed 's/\.jsonnet$/.yaml/')
+    kr8 jsonnet render --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --format stream "$jsonnet" "$@" $KR8_JSONNET_ARGS > "$tmpfile"
+    kr8 jsonnet render --prune=false --cluster "$KR8_CLUSTER" --component "$KR8_COMPONENT" --format stream $KR8_JSONNET_ARGS $KR8_BASE/lib/addnamespace.jsonnet  --ext-str-file inputYaml="$tmpfile" > "$outputDir/$outf"
+  done
+  rm -f "$tmpfile"
+}
+
+[ -z "$*" ] && fail "No sub-command provided"
+case "$1" in
+  helm-render-with-patch)
+      shift; helm-render-with-patch "$@"
+      ;;
+  helm-render)
+      shift; helm-render "$@"
+      ;;
+  yaml-install)
+      shift; yaml-install "$@"
+      ;;
+  jsonnet-render)
+      shift; jsonnet-render "$@"
+      ;;
+  clean-output)
+      shift; clean-output
+      ;;
+  check-environment)
+      shift; check-environment
+      ;;
+  *)
+    fail "Unknown sub-command: $1"
+esac

@@ -26,6 +26,7 @@ archive:
   - README*
   - changelog*
   - CHANGELOG*
+  - scripts/*
 nfpm:
   vendor: Apptio TechOps
   homepage: "https://github.com/apptio/kr8"
@@ -36,6 +37,8 @@ nfpm:
     - rpm
     - deb
   bindir: /usr/local/bin
+  files:
+    "scripts/kr8-helpers": "/usr/local/bin/kr8-helpers"
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
 dist: dist
@@ -58,5 +61,11 @@ brew:
     name: release
     email: release@apptio.com
 
-  homepage: "https://github.com/apptio/kr8"
+  homepage: "https://kr8.rocks"
   description: "Opinionated configuration management tool for Kubernetes Cluster"
+  install: |
+    bin.install "kr8"
+    bin.install "scripts/kr8-helpers"
+  dependencies:
+    - kubernetes-helm
+    - jsonnet
