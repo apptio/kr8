@@ -29,7 +29,8 @@ import (
 )
 
 var (
-	url string
+  dl_url string
+  real_url string
 )
 
 // initCmd represents the init command
@@ -43,12 +44,22 @@ components`,
 }
 
 var repoCmd = &cobra.Command{
-	Use:   "repo",
+	Use:   "repo dir",
+  Args: cobra.MinimumNArgs(1),
 	Short: "Initialize a new kr8 config repo",
 	Long: `Initialize a new kr8 config repo by downloading the kr8 config skeletion repo
 and initialize a git repo so you can get started`,
 	Run: func(cmd *cobra.Command, args []string) {
 
+    if len(args) < 1 {
+      log.Fatal("Must specify a destination")
+    }
+
+    if dl_url != "" {
+      real_url = dl_url
+    } else {
+      log.Fatal("Must specify a URL")
+    }
 		// Get the current working directory
 		pwd, err := os.Getwd()
 		if err != nil {
@@ -56,10 +67,10 @@ and initialize a git repo so you can get started`,
 		}
 
 		// Download the skeletion directory
-		log.Debug("Downloading skeleton repo from ", url)
+		log.Debug("Downloading skeleton repo from ", real_url)
 		client := &getter.Client{
-			Src:  url,
-			Dst:  base,
+			Src:  real_url,
+			Dst:  args[0],
 			Pwd:  pwd,
 			Mode: getter.ClientModeAny,
 		}
@@ -68,6 +79,12 @@ and initialize a git repo so you can get started`,
 			log.Fatal(err)
 			os.Exit(1)
 		}
+
+    // Check for .git folder
+    if _, err := os.Stat(args[0]+"/.git"); !os.IsNotExist(err) {
+      log.Debug("Removing .git directory")
+      os.RemoveAll(args[0]+"/.git")
+    }
 	},
 }
 
@@ -75,6 +92,6 @@ func init() {
 	RootCmd.AddCommand(initCmd)
 	initCmd.AddCommand(repoCmd)
 
-	repoCmd.PersistentFlags().StringVar(&url, "url", "git::https://github.com/apptio/kr8-config-skel", "Source of skeleton directory to create repo from")
+  repoCmd.PersistentFlags().StringVar(&dl_url, "url", "git::https://github.com/apptio/kr8-config-skel", "Source of skeleton directory to create repo from")
 
 }
