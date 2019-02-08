@@ -3,7 +3,7 @@ package cmd
 import (
 	//"fmt"
 	//"fmt"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	//"github.com/olekukonko/tablewriter"
 	"os"
 	"path/filepath"

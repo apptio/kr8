@@ -1,4 +1,7 @@
 project_name: kr8
+before:
+  hooks:
+  - go mod download
 builds:
   -
     env:
@@ -38,11 +41,10 @@ snapshot:
 dist: dist
 dockers:
   -
-    image: apptio/kr8
+    image_templates: 
+      - 'apptio/kr8:{{ .Tag }}'
+      - 'apptio/kr8:latest'
     dockerfile: Dockerfile-goreleaser
-    tag_templates:
-    - "{{ .Tag }}"
-    - latest
     build_flag_templates:
       - "--label=org.label-schema.schema-version=1.0"
       - "--label=org.label-schema.version={{.Version}}"

@@ -23,7 +23,7 @@ package cmd
 import (
 	"os"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/hashicorp/go-getter"
 	"github.com/spf13/cobra"
 )
