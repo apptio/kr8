@@ -69,3 +69,4 @@ brew:
   dependencies:
     - kubernetes-helm
     - jsonnet
+    - go-task/tap/go-task
