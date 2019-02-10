@@ -106,7 +106,6 @@ set-meta(){
 
 # Render a helm chart, and post-process with a jsonnet patch
 helm-render-with-patch() {
-  set -x
   local _chart="$1"
   local _patch="$2"
   local tmpfile
@@ -140,7 +139,6 @@ yaml-install() {
 }
 
 jsonnet-render() {
-  set -x
   check-environment
   set-output
   set-meta
