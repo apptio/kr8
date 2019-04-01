@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
 	"os"
-	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -52,7 +51,7 @@ var listCmd = &cobra.Command{
 	Long:  "List Clusters in kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		clusters, err := getClusters(base)
+		clusters, err := getClusters(clusterDir)
 
 		if err != nil {
 			log.Fatal("Error getting cluster: ", err)
@@ -82,33 +81,9 @@ var paramsCmd = &cobra.Command{
 		if clusterName == "" {
 			log.Fatal("Please specify a cluster name")
 		}
-		clusterPath := getCluster(base, clusterName)
 
-		params := getClusterParams(base, clusterPath)
+		j := renderClusterParams(cmd, clusterName, componentName)
 
-		// render without component first
-		j := renderJsonnet(cmd, params, "", true, "")
-		if componentName != "" {
-			// lookup the configured path for this component
-			componentPrefix := gjson.Get(j, "_components."+componentName+".path")
-			if componentPrefix.String()  == "" {
-				log.Fatal("Component is not defined for this cluster: ", componentName)
-			}
-			componentPath := base + "/" + componentPrefix.String() + "/params.jsonnet"
-			if _, err := os.Stat(componentPath); os.IsNotExist(err) {
-				log.Fatal("No component found at: ", componentPath)
-			}
-
-			// we read the params.jsonnet for the component and append the code into the snippet
-			// with the field name set to the componentName
-			filec, err := ioutil.ReadFile(componentPath)
-			if err != nil {
-				log.Panic("Error reading file:", err)
-			}
-
-			prepend :=  "{"+componentName+": "+string(filec)+ "}"
-			j = renderJsonnet(cmd, params, "", true, prepend)
-		}
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			notunset, _ := cmd.Flags().GetBool("notunset")
@@ -134,9 +109,9 @@ var componentsCmd = &cobra.Command{
 		if clusterName == "" {
 			log.Fatal("Please specify a cluster name")
 		}
-		clusterPath := getCluster(base, clusterName)
+		clusterPath := getCluster(clusterDir, clusterName)
 
-		params := getClusterParams(base, clusterPath)
+		params := getClusterParams(clusterDir, clusterPath)
 		j := renderJsonnet(cmd, params, "._components", true, "")
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)

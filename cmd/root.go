@@ -31,10 +31,12 @@ import (
 )
 
 var (
-	cfgFile     string
-	base        string
-	debug       bool
-	colorOutput bool
+	cfgFile      string
+	baseDir      string
+	clusterDir   string
+	componentDir string
+	debug        bool
+	colorOutput  bool
 )
 
 // exported Version variable
@@ -64,12 +66,15 @@ func Execute(version string) {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVarP(&base, "base", "d", ".", "kr8 config base directory")
+	RootCmd.PersistentFlags().StringVarP(&baseDir, "base", "d", ".", "kr8 config base directory")
+	RootCmd.PersistentFlags().StringVarP(&clusterDir, "clusterdir", "D", "", "kr8 cluster directory")
+	RootCmd.PersistentFlags().StringVarP(&componentDir, "componentdir", "X", "", "kr8 component directory")
 	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing")
 	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", false, "enable colorized output")
 	RootCmd.PersistentFlags().StringArrayP("jpath", "J", nil, "Directories to add to jsonnet include path. Repeat arg for multiple directories")
 	RootCmd.PersistentFlags().StringSlice("ext-str-file", nil, "Set jsonnet extvar from file contents")
 	viper.BindPFlag("base", RootCmd.PersistentFlags().Lookup("base"))
+	viper.BindPFlag("clusterdir", RootCmd.PersistentFlags().Lookup("clusterdir"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -88,8 +93,17 @@ func initConfig() {
 	viper.SetEnvPrefix("KR8")
 	viper.AutomaticEnv() // read in environment variables that match
 
-	base = viper.GetString("base")
-	log.Debug("Using base directory: ", base)
+	baseDir = viper.GetString("base")
+	log.Debug("Using base directory: ", baseDir)
+	clusterDir = viper.GetString("clusterdir")
+	if clusterDir == "" {
+		clusterDir = baseDir + "/clusters"
+	}
+	log.Debug("Using cluster directory: ", clusterDir)
+	if componentDir == "" {
+		componentDir = baseDir + "/components"
+	}
+	log.Debug("Using component directory: ", componentDir)
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		log.Debug("Using config file:", viper.ConfigFileUsed())
