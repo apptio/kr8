@@ -24,15 +24,15 @@ import (
 	"fmt"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 	"os"
-	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	clusterName   string
+	clusterParams string
 	componentName string
 	paramPath     string
 	formatted     string
@@ -52,7 +52,7 @@ var listCmd = &cobra.Command{
 	Long:  "List Clusters in kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		clusters, err := getClusters(base)
+		clusters, err := getClusters(clusterDir)
 
 		if err != nil {
 			log.Fatal("Error getting cluster: ", err)
@@ -78,37 +78,14 @@ var paramsCmd = &cobra.Command{
 	Short: "Show Cluster Params",
 	Long:  "Show cluster params in kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
+		clusterName := viper.GetString("cluster")
 
-		if clusterName == "" {
-			log.Fatal("Please specify a cluster name")
+		if clusterName == "" && clusterParams == "" {
+			log.Fatal("Please specify a --cluster name and/or --clusterparams")
 		}
-		clusterPath := getCluster(base, clusterName)
 
-		params := getClusterParams(base, clusterPath)
+		j := renderClusterParams(cmd, clusterName, componentName, clusterParams)
 
-		// render without component first
-		j := renderJsonnet(cmd, params, "", true, "")
-		if componentName != "" {
-			// lookup the configured path for this component
-			componentPrefix := gjson.Get(j, "_components."+componentName+".path")
-			if componentPrefix.String()  == "" {
-				log.Fatal("Component is not defined for this cluster: ", componentName)
-			}
-			componentPath := base + "/" + componentPrefix.String() + "/params.jsonnet"
-			if _, err := os.Stat(componentPath); os.IsNotExist(err) {
-				log.Fatal("No component found at: ", componentPath)
-			}
-
-			// we read the params.jsonnet for the component and append the code into the snippet
-			// with the field name set to the componentName
-			filec, err := ioutil.ReadFile(componentPath)
-			if err != nil {
-				log.Panic("Error reading file:", err)
-			}
-
-			prepend :=  "{"+componentName+": "+string(filec)+ "}"
-			j = renderJsonnet(cmd, params, "", true, prepend)
-		}
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			notunset, _ := cmd.Flags().GetBool("notunset")
@@ -130,13 +107,21 @@ var componentsCmd = &cobra.Command{
 	Short: "Show Cluster Components",
 	Long:  "Show the components to be installed in the cluster in the kr8 hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
+		clusterName := viper.GetString("cluster")
 
-		if clusterName == "" {
-			log.Fatal("Please specify a cluster name")
+		if clusterName == "" && clusterParams == "" {
+			log.Fatal("Please specify a --cluster name and/or --clusterparams")
 		}
-		clusterPath := getCluster(base, clusterName)
 
-		params := getClusterParams(base, clusterPath)
+		var params []string
+		if clusterName != "" {
+			clusterPath := getCluster(clusterDir, clusterName)
+			params = getClusterParams(clusterDir, clusterPath)
+		}
+		if clusterParams != "" {
+			params = append(params, clusterParams)
+		}
+
 		j := renderJsonnet(cmd, params, "._components", true, "")
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
@@ -159,9 +144,10 @@ func init() {
 	clusterCmd.AddCommand(listCmd)
 	clusterCmd.AddCommand(paramsCmd)
 	clusterCmd.AddCommand(componentsCmd)
-	clusterCmd.PersistentFlags().StringVarP(&clusterName, "cluster", "c", "", "cluster to operate on")
+	clusterCmd.PersistentFlags().StringP("cluster", "c", "", "cluster to operate on")
+	clusterCmd.PersistentFlags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
 	paramsCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
 	paramsCmd.Flags().StringVarP(&paramPath, "param", "P", "", "return value of json param from supplied path")
 	paramsCmd.Flags().BoolP("notunset", "", false, "Fail if specified param is not set. Otherwise returns blank value if param is not set")
-
+	viper.BindPFlag("cluster", clusterCmd.PersistentFlags().Lookup("cluster"))
 }
