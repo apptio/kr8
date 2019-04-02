@@ -256,5 +256,5 @@ func init() {
 	renderCmd.PersistentFlags().StringVarP(&outputFormat, "format", "F", "json", "Output forma: json, yaml, stream")
 
 	renderCmd.PersistentFlags().StringP("cluster", "c", "", "cluster to render params for")
-	viper.BindPFlag("cluster", clusterCmd.PersistentFlags().Lookup("cluster"))
+	viper.BindPFlag("cluster", renderCmd.PersistentFlags().Lookup("cluster"))
 }
