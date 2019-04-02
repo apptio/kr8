@@ -9,6 +9,7 @@ import (
 	jsonnetAst "github.com/google/go-jsonnet/ast"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"io"
 	"io/ioutil"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -191,11 +192,13 @@ var renderCmd = &cobra.Command{
 
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if clusterName == "" {
-			log.Fatal("Please specify a cluster name")
+		clusterName := viper.GetString("cluster")
+
+		if clusterName == "" && clusterParams == "" {
+			log.Fatal("Please specify a --cluster name and/or --clusterparams")
 		}
 
-		config := renderClusterParams(cmd, clusterName, componentName)
+		config := renderClusterParams(cmd, clusterName, componentName, clusterParams)
 
 		// VM
 		vm, _ := JsonnetVM(cmd)
@@ -248,7 +251,10 @@ func init() {
 	RootCmd.AddCommand(jsonnetCmd)
 	jsonnetCmd.AddCommand(renderCmd)
 	renderCmd.PersistentFlags().BoolVarP(&pruneFlag, "prune", "", true, "Prune null and empty objects from rendered json")
-	renderCmd.PersistentFlags().StringVarP(&clusterName, "cluster", "c", "", "cluster to render params for")
+	renderCmd.PersistentFlags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
 	renderCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
 	renderCmd.PersistentFlags().StringVarP(&outputFormat, "format", "F", "json", "Output forma: json, yaml, stream")
+
+	renderCmd.PersistentFlags().StringP("cluster", "c", "", "cluster to render params for")
+	viper.BindPFlag("cluster", clusterCmd.PersistentFlags().Lookup("cluster"))
 }

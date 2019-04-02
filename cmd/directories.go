@@ -142,14 +142,19 @@ func getClusterParams(basePath string, targetPath string) []string {
 
 }
 
-func renderClusterParams(cmd *cobra.Command, clusterName string, componentName string) string {
-	if clusterName == "" {
-		log.Fatal("Please specify a cluster name")
+func renderClusterParams(cmd *cobra.Command, clusterName string, componentName string, clusterParams string) string {
+	if clusterName == "" && clusterParams == "" {
+		log.Fatal("Please specify a --cluster name and/or --clusterparams")
 	}
 
-	clusterPath := getCluster(clusterDir, clusterName)
-
-	params := getClusterParams(clusterDir, clusterPath)
+	var params []string
+	if clusterName != "" {
+		clusterPath := getCluster(clusterDir, clusterName)
+		params = getClusterParams(clusterDir, clusterPath)
+	}
+	if clusterParams != "" {
+		params = append(params, clusterParams)
+	}
 
 	j := renderJsonnet(cmd, params, "", true, "")
 	if componentName != "" {

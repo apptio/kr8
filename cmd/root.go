@@ -75,6 +75,7 @@ func init() {
 	RootCmd.PersistentFlags().StringSlice("ext-str-file", nil, "Set jsonnet extvar from file contents")
 	viper.BindPFlag("base", RootCmd.PersistentFlags().Lookup("base"))
 	viper.BindPFlag("clusterdir", RootCmd.PersistentFlags().Lookup("clusterdir"))
+	viper.BindPFlag("componentdir", RootCmd.PersistentFlags().Lookup("componentdir"))
 }
 
 // initConfig reads in config file and ENV variables if set.
