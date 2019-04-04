@@ -78,6 +78,7 @@ var paramsCmd = &cobra.Command{
 	Short: "Show Cluster Params",
 	Long:  "Show cluster params in kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
+		viper.BindPFlag("cluster", clusterCmd.PersistentFlags().Lookup("cluster"))
 		clusterName := viper.GetString("cluster")
 
 		if clusterName == "" && clusterParams == "" {
@@ -107,6 +108,7 @@ var componentsCmd = &cobra.Command{
 	Short: "Show Cluster Components",
 	Long:  "Show the components to be installed in the cluster in the kr8 hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
+		viper.BindPFlag("cluster", clusterCmd.PersistentFlags().Lookup("cluster"))
 		clusterName := viper.GetString("cluster")
 
 		if clusterName == "" && clusterParams == "" {
@@ -149,5 +151,4 @@ func init() {
 	paramsCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
 	paramsCmd.Flags().StringVarP(&paramPath, "param", "P", "", "return value of json param from supplied path")
 	paramsCmd.Flags().BoolP("notunset", "", false, "Fail if specified param is not set. Otherwise returns blank value if param is not set")
-	viper.BindPFlag("cluster", clusterCmd.PersistentFlags().Lookup("cluster"))
 }
