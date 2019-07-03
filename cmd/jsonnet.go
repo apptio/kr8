@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	gyaml "github.com/ghodss/yaml"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+
+	goyaml "github.com/ghodss/yaml"
 	jsonnet "github.com/google/go-jsonnet"
 	jsonnetAst "github.com/google/go-jsonnet/ast"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io"
-	"io/ioutil"
-	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
-	"os"
-	"path/filepath"
-	"strings"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 var (
@@ -146,7 +148,9 @@ Copyright 2018 ksonnet
    limitations under the License.
 
 */
+
 func RegisterNativeFuncs(vm *jsonnet.VM) {
+	// TODO(mkm): go-jsonnet 0.12.x now contains native std.parseJson; deprecate and remove this one.
 	vm.NativeFunction(&jsonnet.NativeFunction{
 		Name:   "parseJson",
 		Params: []jsonnetAst.Identifier{"json"},
@@ -163,7 +167,7 @@ func RegisterNativeFuncs(vm *jsonnet.VM) {
 		Func: func(args []interface{}) (res interface{}, err error) {
 			ret := []interface{}{}
 			data := []byte(args[0].(string))
-			d := k8syaml.NewYAMLToJSONDecoder(bytes.NewReader(data))
+			d := yaml.NewYAMLToJSONDecoder(bytes.NewReader(data))
 			for {
 				var doc interface{}
 				if err := d.Decode(&doc); err != nil {
@@ -175,6 +179,63 @@ func RegisterNativeFuncs(vm *jsonnet.VM) {
 				ret = append(ret, doc)
 			}
 			return ret, nil
+		},
+	})
+
+	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "manifestJson",
+		Params: []jsonnetAst.Identifier{"json", "indent"},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			value := args[0]
+			indent := int(args[1].(float64))
+			data, err := json.MarshalIndent(value, "", strings.Repeat(" ", indent))
+			if err != nil {
+				return "", err
+			}
+			data = append(data, byte('\n'))
+			return string(data), nil
+		},
+	})
+
+	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "manifestYaml",
+		Params: []jsonnetAst.Identifier{"json"},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			value := args[0]
+			output, err := goyaml.Marshal(value)
+			return string(output), err
+		},
+	})
+
+	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "escapeStringRegex",
+		Params: []jsonnetAst.Identifier{"str"},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			return regexp.QuoteMeta(args[0].(string)), nil
+		},
+	})
+
+	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "regexMatch",
+		Params: []jsonnetAst.Identifier{"regex", "string"},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			return regexp.MatchString(args[0].(string), args[1].(string))
+		},
+	})
+
+	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "regexSubst",
+		Params: []jsonnetAst.Identifier{"regex", "src", "repl"},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			regex := args[0].(string)
+			src := args[1].(string)
+			repl := args[2].(string)
+
+			r, err := regexp.Compile(regex)
+			if err != nil {
+				return "", err
+			}
+			return r.ReplaceAllString(src, repl), nil
 		},
 	})
 }
@@ -220,7 +281,7 @@ var renderCmd = &cobra.Command{
 		}
 		switch outputFormat {
 		case "yaml":
-			yaml, err := gyaml.JSONToYAML([]byte(j))
+			yaml, err := goyaml.JSONToYAML([]byte(j))
 			if err != nil {
 				log.Panic("Error converting JSON to YAML: ", err)
 			}
@@ -232,7 +293,7 @@ var renderCmd = &cobra.Command{
 			}
 			for _, jobj := range o {
 				fmt.Println("---")
-				buf, err := gyaml.Marshal(jobj)
+				buf, err := goyaml.Marshal(jobj)
 				if err != nil {
 					log.Panic(err)
 				}

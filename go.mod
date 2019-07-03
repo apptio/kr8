@@ -9,7 +9,7 @@ require (
 	github.com/go-ini/ini v1.39.0 // indirect
 	github.com/gogo/protobuf v0.0.0-20171007142547-342cbe0a0415 // indirect
 	github.com/golang/glog v0.0.0-20141105023935-44145f04b68c // indirect
-	github.com/google/go-jsonnet v0.11.2
+	github.com/google/go-jsonnet v0.12.1
 	github.com/google/gofuzz v0.0.0-20161122191042-44d81051d367 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.0 // indirect
