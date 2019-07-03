@@ -21,6 +21,8 @@ github.com/golang/glog v0.0.0-20141105023935-44145f04b68c h1:CbdkBQ1/PiAo0FYJhQG
 github.com/golang/glog v0.0.0-20141105023935-44145f04b68c/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/google/go-jsonnet v0.11.2 h1:oSCkvGPE72ouWJLOajr4p0clGFCOFmwhqo52faGsudk=
 github.com/google/go-jsonnet v0.11.2/go.mod h1:gVu3UVSfOt5fRFq+dh9duBqXa5905QY8S1QvMNcEIVs=
+github.com/google/go-jsonnet v0.12.1 h1:v0iUm/b4SBz7lR/diMoz9tLAz8lqtnNRKIwMrmU2HEU=
+github.com/google/go-jsonnet v0.12.1/go.mod h1:gVu3UVSfOt5fRFq+dh9duBqXa5905QY8S1QvMNcEIVs=
 github.com/google/gofuzz v0.0.0-20161122191042-44d81051d367 h1:ScAXWS+TR6MZKex+7Z8rneuSJH+FSDqd6ocQyl+ZHo4=
 github.com/google/gofuzz v0.0.0-20161122191042-44d81051d367/go.mod h1:HP5RmnzzSNb993RKQDq4+1A4ia9nllfqcQFTQJedwGI=
 github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e h1:JKmoR8x90Iww1ks85zJ1lfDGgIiMDuIptTOhJq+zKyg=
