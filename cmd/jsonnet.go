@@ -56,7 +56,7 @@ func JsonnetVM(cmd *cobra.Command) (*jsonnet.VM, error) {
 	// always add lib directory in base directory to path
 	jpath := []string{baseDir + "/lib"}
 
-	jpath = filepath.SplitList(os.Getenv("KR8_JPATH"))
+	jpath = append(jpath, filepath.SplitList(os.Getenv("KR8_JPATH"))...)
 	jpathArgs, err := flags.GetStringArray("jpath")
 	if err != nil {
 		return nil, err
