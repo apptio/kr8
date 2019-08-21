@@ -176,8 +176,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentName s
 		if componentName != "" && key != componentName {
 			continue
 		}
-		var path string
-		path = baseDir + "/" + value.Path + "/params.jsonnet"
+		path := baseDir + "/" + value.Path + "/params.jsonnet"
 		filec, err := ioutil.ReadFile(path)
 		if err != nil {
 			log.Panic("Error reading "+path+" :", err)
