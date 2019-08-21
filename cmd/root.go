@@ -33,6 +33,7 @@ import (
 var (
 	cfgFile      string
 	baseDir      string
+	defaultJpath string
 	clusterDir   string
 	componentDir string
 	debug        bool

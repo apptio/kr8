@@ -5,6 +5,8 @@ import (
 	//"fmt"
 	log "github.com/sirupsen/logrus"
 	//"github.com/olekukonko/tablewriter"
+	"encoding/json"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -12,6 +14,10 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+type ComponentDef struct {
+	Path string `json:"path"`
+}
 
 func (c *Clusters) AddItem(item Cluster) Clusters {
 	c.Cluster = append(c.Cluster, item)
@@ -148,6 +154,8 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentName s
 	}
 
 	var params []string
+	var componentMap map[string]ComponentDef
+
 	if clusterName != "" {
 		clusterPath := getCluster(clusterDir, clusterName)
 		params = getClusterParams(clusterDir, clusterPath)
@@ -156,35 +164,58 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentName s
 		params = append(params, clusterParams)
 	}
 
-	j := renderJsonnet(cmd, params, "", true, "")
-	if componentName != "" {
-		// lookup the configured path for this component
-		componentObj := gjson.Get(j, "_components."+componentName)
-		if componentObj.String() == "" {
-			log.Fatal("Component is not defined for this cluster: ", componentName)
-		}
-		componentPrefix := gjson.Get(componentObj.String(), "path")
-		var componentPath string
-		if componentPrefix.String() != "" {
-			componentPath = baseDir + "/" + componentPrefix.String() + "/params.jsonnet"
-		} else {
-			componentPrefix = gjson.Get(componentObj.String(), "component")
-			componentPath = componentDir + "/" + componentPrefix.String() + "/params.jsonnet"
-		}
-		//componentPath := componentDir + "/components/" + componentName + "/params.jsonnet"
-		if _, err := os.Stat(componentPath); os.IsNotExist(err) {
-			log.Fatal("No component found at: ", componentPath)
-		}
+	compParams := renderJsonnet(cmd, params, "", true, "")
 
-		// we read the params.jsonnet for the component and append the code into the snippet
-		// with the field name set to the componentName
-		filec, err := ioutil.ReadFile(componentPath)
-		if err != nil {
-			log.Panic("Error reading file:", err)
-		}
-
-		prepend := "{" + componentName + ": " + string(filec) + "}"
-		j = renderJsonnet(cmd, params, "", true, prepend)
+	compString := gjson.Get(compParams, "_components")
+	err := json.Unmarshal([]byte(compString.String()), &componentMap)
+	if err != nil {
+		log.Panic("failed to parse component map:", err)
 	}
-	return j
+	componentDefaultsMerged := "{"
+	for key, value := range componentMap {
+		var path string
+		path = baseDir + "/" + value.Path + "/params.jsonnet"
+		filec, err := ioutil.ReadFile(path)
+		if err != nil {
+			log.Panic("Error reading "+path+" :", err)
+		}
+		componentDefaultsMerged = componentDefaultsMerged + fmt.Sprintf("'%s': %s,", key, string(filec))
+	}
+	componentDefaultsMerged = componentDefaultsMerged + "}"
+
+	//fmt.Println(params)
+	//fmt.Println(componentDefaultsMerged)
+	compParams = renderJsonnet(cmd, params, "", true, componentDefaultsMerged)
+
+	/*
+		if componentName != "" {
+			// lookup the configured path for this component
+			componentObj := gjson.Get(compParams, "_components."+componentName)
+			if componentObj.String() == "" {
+				log.Fatal("Component is not defined for this cluster: ", componentName)
+			}
+			componentPrefix := gjson.Get(componentObj.String(), "path")
+			var componentPath string
+			if componentPrefix.String() != "" {
+				componentPath = baseDir + "/" + componentPrefix.String() + "/params.jsonnet"
+			} else {
+				componentPrefix = gjson.Get(componentObj.String(), "component")
+				componentPath = componentDir + "/" + componentPrefix.String() + "/params.jsonnet"
+			}
+			//componentPath := componentDir + "/components/" + componentName + "/params.jsonnet"
+			if _, err := os.Stat(componentPath); os.IsNotExist(err) {
+				log.Fatal("No component found at: ", componentPath)
+			}
+
+			// we read the params.jsonnet for the component and append the code into the snippet
+			// with the field name set to the componentName
+			filec, err := ioutil.ReadFile(componentPath)
+			if err != nil {
+				log.Panic("Error reading file:", err)
+			}
+
+			prepend := "{" + componentName + ": " + string(filec) + "}"
+			compParams = renderJsonnet(cmd, params, "", true, prepend)
+		} */
+	return compParams
 }
