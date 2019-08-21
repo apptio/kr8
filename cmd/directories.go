@@ -173,6 +173,9 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentName s
 	}
 	componentDefaultsMerged := "{"
 	for key, value := range componentMap {
+		if componentName != "" && key != componentName {
+			continue
+		}
 		var path string
 		path = baseDir + "/" + value.Path + "/params.jsonnet"
 		filec, err := ioutil.ReadFile(path)
@@ -183,39 +186,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentName s
 	}
 	componentDefaultsMerged = componentDefaultsMerged + "}"
 
-	//fmt.Println(params)
-	//fmt.Println(componentDefaultsMerged)
 	compParams = renderJsonnet(cmd, params, "", true, componentDefaultsMerged)
 
-	/*
-		if componentName != "" {
-			// lookup the configured path for this component
-			componentObj := gjson.Get(compParams, "_components."+componentName)
-			if componentObj.String() == "" {
-				log.Fatal("Component is not defined for this cluster: ", componentName)
-			}
-			componentPrefix := gjson.Get(componentObj.String(), "path")
-			var componentPath string
-			if componentPrefix.String() != "" {
-				componentPath = baseDir + "/" + componentPrefix.String() + "/params.jsonnet"
-			} else {
-				componentPrefix = gjson.Get(componentObj.String(), "component")
-				componentPath = componentDir + "/" + componentPrefix.String() + "/params.jsonnet"
-			}
-			//componentPath := componentDir + "/components/" + componentName + "/params.jsonnet"
-			if _, err := os.Stat(componentPath); os.IsNotExist(err) {
-				log.Fatal("No component found at: ", componentPath)
-			}
-
-			// we read the params.jsonnet for the component and append the code into the snippet
-			// with the field name set to the componentName
-			filec, err := ioutil.ReadFile(componentPath)
-			if err != nil {
-				log.Panic("Error reading file:", err)
-			}
-
-			prepend := "{" + componentName + ": " + string(filec) + "}"
-			compParams = renderJsonnet(cmd, params, "", true, prepend)
-		} */
 	return compParams
 }
