@@ -23,8 +23,8 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	gyaml "github.com/ghodss/yaml"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"io"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

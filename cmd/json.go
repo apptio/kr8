@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/fatih/color"
 	"github.com/hokaccha/go-prettyjson"
+	log "github.com/sirupsen/logrus"
 )
 
 func Pretty(input string, colorOutput bool) string {
@@ -20,7 +20,7 @@ func Pretty(input string, colorOutput bool) string {
 
 	if err != nil {
 		log.Panic("Error formatting JSON: ", err)
-	} 
+	}
 
 	return string(formatted)
 

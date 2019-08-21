@@ -23,13 +23,13 @@ package cmd
 import (
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/hashicorp/go-getter"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var (
-	dl_url string
+	dl_url   string
 	real_url string
 )
 
@@ -45,7 +45,7 @@ components`,
 
 var repoCmd = &cobra.Command{
 	Use:   "repo dir",
-	Args: cobra.MinimumNArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Short: "Initialize a new kr8 config repo",
 	Long: `Initialize a new kr8 config repo by downloading the kr8 config skeletion repo
 and initialize a git repo so you can get started`,
@@ -81,9 +81,9 @@ and initialize a git repo so you can get started`,
 		}
 
 		// Check for .git folder
-		if _, err := os.Stat(args[0]+"/.git"); !os.IsNotExist(err) {
+		if _, err := os.Stat(args[0] + "/.git"); !os.IsNotExist(err) {
 			log.Debug("Removing .git directory")
-			os.RemoveAll(args[0]+"/.git")
+			os.RemoveAll(args[0] + "/.git")
 		}
 	},
 }
