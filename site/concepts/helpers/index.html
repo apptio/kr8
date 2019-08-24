@@ -307,9 +307,73 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Helpers
+      </label>
+    
     <a href="./" title="Helpers" class="md-nav__link md-nav__link--active">
       Helpers
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#clean-output" title="clean-output" class="md-nav__link">
+    clean-output
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helm-render" title="helm-render" class="md-nav__link">
+    helm-render
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helm-render-with-patch" title="helm-render-with-patch" class="md-nav__link">
+    helm-render-with-patch
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yaml-install" title="yaml-install" class="md-nav__link">
+    yaml-install
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jsonnet-render" title="jsonnet-render" class="md-nav__link">
+    jsonnet-render
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jk-render" title="jk-render" class="md-nav__link">
+    jk-render
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -408,6 +472,57 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#clean-output" title="clean-output" class="md-nav__link">
+    clean-output
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helm-render" title="helm-render" class="md-nav__link">
+    helm-render
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helm-render-with-patch" title="helm-render-with-patch" class="md-nav__link">
+    helm-render-with-patch
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yaml-install" title="yaml-install" class="md-nav__link">
+    yaml-install
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jsonnet-render" title="jsonnet-render" class="md-nav__link">
+    jsonnet-render
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jk-render" title="jk-render" class="md-nav__link">
+    jk-render
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -420,6 +535,39 @@
                 
                 
                 <h1 id="helpers">Helpers</h1>
+<p>kr8-helpers is a set of scripts that wraps around the kr8 command for rendering components. The different types of components have different helps.</p>
+<p>You should ensure the <code>kr8-helpers</code> scripts are available in your <code>$PATH</code>. You can find them <a href="https://github.com/apptio/kr8/tree/master/scripts">here</a></p>
+<h2 id="clean-output">clean-output</h2>
+<p>This helper cleans the generated directory and the metadata directory for each component. It should generally be the first helper you run as part of your component Taskfile</p>
+<h2 id="helm-render">helm-render</h2>
+<p>Render a helm chart using <code>helm template</code>. This allows you to install helm charts as components with kr8. For more information, see the <a href="../../components/helm/">helm component section</a></p>
+<p>Example:</p>
+<pre><code class="bash">kr8-helpers helm-render &quot;{{.CHART_NAME}}&quot;
+</code></pre>
+
+<h2 id="helm-render-with-patch">helm-render-with-patch</h2>
+<p>Similar to <code>helm-render</code> except you can also patch the helm chart and add options and configuration that might not be exposed as a helm <code>values.yaml</code>. This helper will look for a <code>patches.jsonnet</code> inside the component directory. For more information, see the <a href="../../components/helm/">helm component section</a></p>
+<p>Example:</p>
+<pre><code class="bash">kr8-helpers helm-render-with-patch &quot;{{.CHART_NAME}}&quot; patches.jsonnet
+</code></pre>
+
+<h2 id="yaml-install">yaml-install</h2>
+<p>The simplest helper, this just copies a specified yaml file for the component into the generated directory. It also cleans the yaml file of any unnecessary whitespace using the <code>helmclean</code> command in kr8</p>
+<p>Example:</p>
+<pre><code class="bash">kr8-helpers yaml-install vendored/01_crd.yaml
+</code></pre>
+
+<h2 id="jsonnet-render">jsonnet-render</h2>
+<p>Render a jsonnet file. If you're starting a component without any source manifests or helm chart, or using something like the <a href="https://github.com/coreos/prometheus-operator/tree/master/jsonnet/prometheus-operator">prometheus-operator</a> this would be what you'd use.</p>
+<p>Example:</p>
+<pre><code class="bash">kr8-helpers jsonnet-render secrets.jsonnet
+</code></pre>
+
+<h2 id="jk-render">jk-render</h2>
+<p><a href="https://jkcfg.github.io/#/">jk</a> is a tool which allows you to write configuration as actual code. You can use <code>jk</code> to render a component:</p>
+<p>Example:</p>
+<pre><code class="bash">kr8-helpers jk-render nginx.js
+</code></pre>
                 
                   
                 

@@ -3,11 +3,18 @@ version: '2'
 
 
 tasks:
-  web:
-    desc: Build website assets
-    env:
-      URL: https://kr8.rocks
+  mkdocs:
+    desc: Install mkdocs
     cmds:
-      - echo $URL
-      - hugo -s website -b $URL -d ../docs
+      - pipenv install mkdocs
+      - pipenv install mkdocs-material
+  web-local:
+    desc: Run the site locally
+    cmds:
+      - pipenv run mkdocs serve
+  web-deploy:
+    desc: Build website assets
+    cmds:
+      - pipenv run mkdocs build
+      - pipenv run mkdocs gh-deploy
 
