@@ -1,0 +1,23 @@
+site_name: kr8
+theme: 
+  name: 'material'
+
+nav:
+  - Home: index.md
+  - Installation:
+    - 'OSX': installation/osx.md
+    - 'Linux': installation/linux.md
+    - 'Dependencies': installation/dependencies.md
+  - Concepts: 
+    - 'Overview': concepts/overview.md
+    - 'Components': concepts/components.md
+    - 'Clusters': concepts/clusters.md
+    - 'Helpers': concepts/helpers.md
+  - Components:
+    - 'Jsonnet': components/jsonnet.md
+    - 'YAML': components/yaml.md
+    - 'Helm': components/helm.md
+    - 'Jk': components/jk.md
+
+
+
