@@ -367,9 +367,59 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Helm
+      </label>
+    
     <a href="./" title="Helm" class="md-nav__link md-nav__link--active">
       Helm
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#taskfile" title="Taskfile" class="md-nav__link">
+    Taskfile
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#params" title="Params" class="md-nav__link">
+    Params
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values-file" title="Values file" class="md-nav__link">
+    Values file
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#patches" title="Patches" class="md-nav__link">
+    Patches
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -408,6 +458,43 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#taskfile" title="Taskfile" class="md-nav__link">
+    Taskfile
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#params" title="Params" class="md-nav__link">
+    Params
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values-file" title="Values file" class="md-nav__link">
+    Values file
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#patches" title="Patches" class="md-nav__link">
+    Patches
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -420,6 +507,82 @@
                 
                 
                 <h1 id="helm">Helm</h1>
+<p>kr8 can render helm charts locally and inject parameters as helm values. This provides a great degree of flexibility when installing components into clusters.</p>
+<h2 id="taskfile">Taskfile</h2>
+<p>An example taskfile for a helm chart might look like this:</p>
+<pre><code class="yaml">version: 2
+
+vars:
+  CHART_VER:  v0.8.1
+  CHART_NAME: cert-manager
+
+tasks:
+  fetch:
+    desc: &quot;fetch component dependencies&quot;
+    cmds:
+      - rm -fr charts vendored; mkdir charts vendored
+      # add the helm repo and fetch it locally into the charts directly
+      - helm fetch --repo https://charts.jetstack.io --untar --untardir ./charts --version &quot;{{.CHART_VER}}&quot; &quot;{{.CHART_NAME}}&quot;
+      - wget --quiet -N https://raw.githubusercontent.com/jetstack/cert-manager/release-0.8/deploy/manifests/00-crds.yaml -O - | grep -v ^# &gt; vendored/00cert-manager-crd.yaml
+
+
+  generate:
+    desc: &quot;generate&quot;
+    cmds:
+      - kr8-helpers clean-output
+      - kr8-helpers yaml-install vendored/00cert-manager-crd.yaml
+      - kr8-helpers jsonnet-render 00namespace.jsonnet
+      - kr8-helpers helm-render &quot;{{.CHART_NAME}}&quot;
+</code></pre>
+
+<h2 id="params">Params</h2>
+<p>The <code>params.jsonnet</code> for a helm chart directory should include the helm values you want to use. Here's an example:</p>
+<pre><code class="jsonnet">{
+  release_name: 'cert-manager',
+  namespace: 'cert-manager',
+  kubecfg_gc_enable: true,
+  kubecfg_update_args: '--validate=false',
+  helm_values: {
+    webhook: { enabled: false },  // this is a value for the helm chart
+  },
+}
+</code></pre>
+
+<h2 id="values-file">Values file</h2>
+<p>A values file is a required file for a helm component. The name of the file must be <code>componentname-values.jsonnet</code> (for example: cert-manager-values.jsonnet). It's content would be something like this:</p>
+<pre><code class="jsonnet">local config = std.extVar('kr8');
+
+if 'helm_values' in config then config.helm_values else {}
+</code></pre>
+
+<p>You can also optionally set the values for the helm chart in here, this would look something like this:</p>
+<pre><code class="jsonnet">{
+  replicaCount: 2
+}
+</code></pre>
+
+<h2 id="patches">Patches</h2>
+<p>There are certain situations where a configuration option is not available for a helm chart, for example, you might want to add an argument that hasn't quite made it into the helm chart yet, or add something like <a href="https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#inter-pod-affinity-and-anti-affinity">pod affinity</a> where it isn't actually a value option in a helm chart.</p>
+<p>kr8 helps you in this situation by providing a mechanism to patch a helm chart. You need to use the <code>helm-render-with-patch</code> helper and provide a <code>patches.jsonnet</code> in the component directory.</p>
+<p>Here's an example <code>patches.jsonnet</code> for <a href="https://github.com/kubernetes-incubator/external-dns">external-dns</a></p>
+<pre><code class="jsonnet">local apptio = import 'apptio.libsonnet';
+local helpers = import 'helpers.libsonnet';  // some helper functions
+local kube = import 'kube.libsonnet';
+local config = std.extVar('kr8'); // config is all the config from params.jsonnet
+
+// remove Secret objects and add a namespace
+[
+  for object in helpers.list(
+    // object list is converted to hash of named objects, then they can be modified by name
+    helpers.named(helpers.helmInput) + {
+      ['Deployment/' + config.release_name]+: helpers.patchContainer({
+        // Injects an extra arg, which wasn't originally in the helm chart
+        [if std.objectHas(config,'assumeRoleArn') then 'args']+: ['--aws-assume-role='+config.assumeRoleArn],
+      }),
+    },
+  )
+]
+</code></pre>
                 
                   
                 
