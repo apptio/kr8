@@ -112,6 +112,8 @@ var getparamsCmd = &cobra.Command{
 			log.Fatal("Please specify a --cluster")
 		}
 
+		fmt.Println(componentName)
+
 		j := renderClusterParams(cmd, clusterName, componentName, clusterParams)
 
 		if paramPath != "" {
@@ -140,5 +142,7 @@ func init() {
 	// params
 	getCmd.AddCommand(getparamsCmd)
 	getparamsCmd.PersistentFlags().StringVarP(&cluster, "cluster", "c", "", "get components for cluster")
+	getparamsCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
+	getparamsCmd.Flags().StringVarP(&paramPath, "param", "P", "", "return value of json param from supplied path")
 
 }
