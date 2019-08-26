@@ -33,8 +33,6 @@ import (
 
 var (
 	clusterParams string
-	componentName string
-	paramPath     string
 	formatted     string
 )
 
