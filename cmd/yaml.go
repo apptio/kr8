@@ -38,7 +38,7 @@ var yamlCmd = &cobra.Command{
 	Long:  `Utility commands to process YAML`,
 }
 
-var helmcleanCmd = &cobra.Command{
+var yamlhelmcleanCmd = &cobra.Command{
 	Use:   "helmclean",
 	Short: "Clean YAML stream from Helm Template output - Reads from Stdin",
 	Long:  `Removes Null YAML objects from a YAML stream`,
@@ -82,6 +82,6 @@ var helmcleanCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(yamlCmd)
-	yamlCmd.AddCommand(helmcleanCmd)
+	yamlCmd.AddCommand(yamlhelmcleanCmd)
 
 }
