@@ -249,7 +249,7 @@ var jsonnetCmd = &cobra.Command{
 	Long:  `Utility commands to process jsonnet`,
 }
 
-var renderCmd = &cobra.Command{
+var jsonnetrenderCmd = &cobra.Command{
 	Use:   "render file [file ...]",
 	Short: "Render a jsonnet file",
 	Long:  `Render a jsonnet file to JSON or YAML`,
@@ -313,12 +313,12 @@ var renderCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(jsonnetCmd)
-	jsonnetCmd.AddCommand(renderCmd)
-	renderCmd.PersistentFlags().BoolVarP(&pruneFlag, "prune", "", true, "Prune null and empty objects from rendered json")
-	renderCmd.PersistentFlags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
-	renderCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
-	renderCmd.PersistentFlags().StringVarP(&outputFormat, "format", "F", "json", "Output forma: json, yaml, stream")
+	jsonnetCmd.AddCommand(jsonnetrenderCmd)
+	jsonnetrenderCmd.PersistentFlags().BoolVarP(&pruneFlag, "prune", "", true, "Prune null and empty objects from rendered json")
+	jsonnetrenderCmd.PersistentFlags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
+	jsonnetrenderCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
+	jsonnetrenderCmd.PersistentFlags().StringVarP(&outputFormat, "format", "F", "json", "Output forma: json, yaml, stream")
 
-	renderCmd.PersistentFlags().StringP("cluster", "c", "", "cluster to render params for")
-	viper.BindPFlag("cluster", renderCmd.PersistentFlags().Lookup("cluster"))
+	jsonnetrenderCmd.PersistentFlags().StringP("cluster", "c", "", "cluster to render params for")
+	viper.BindPFlag("cluster", jsonnetrenderCmd.PersistentFlags().Lookup("cluster"))
 }
