@@ -75,6 +75,10 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
+      <a href="#clusters" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -288,10 +292,55 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Clusters
+      </label>
     
     <a href="./" title="Clusters" class="md-nav__link md-nav__link--active">
       Clusters
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#components-in-clusters" title="Components in clusters" class="md-nav__link">
+    Components in clusters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster-parameters" title="Cluster parameters" class="md-nav__link">
+    Cluster parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hierarchy-system" title="Hierarchy System" class="md-nav__link">
+    Hierarchy System
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -392,15 +441,145 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#components-in-clusters" title="Components in clusters" class="md-nav__link">
+    Components in clusters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster-parameters" title="Cluster parameters" class="md-nav__link">
+    Cluster parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hierarchy-system" title="Hierarchy System" class="md-nav__link">
+    Hierarchy System
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
                 
-                  <h1>Clusters</h1>
-                
-                
+                <h1 id="clusters">Clusters</h1>
+<p>A cluster is a manageable cluster in kr8. Clusters are defined in a hierarchical system which is loosely inspired by <a href="https://puppet.com/docs/hiera/3.3/index.html">Hiera</a> from the Puppet ecosystem.</p>
+<p>An example definition for clusters might look like this:</p>
+<pre><code class="bash">clusters
+├── development
+│   └── dev1
+│       └── cluster.jsonnet
+├── params.jsonnet
+└── production
+    ├── params.jsonnet
+    ├── prod1
+    │   └── cluster.jsonnet
+    └── prod2
+        └── cluster.jsonnet
+</code></pre>
+
+<p>The clusters are given names and then grouped together inside a directory tree. </p>
+<p>There are two jsonnet files you'll notice here:</p>
+<ul>
+<li><code>cluster.jsonnet</code> - this defines a named cluster, kr8 will stop going down through the directory tree when it finds this file</li>
+<li><code>params.jsonnet</code> - this is a file which can have components and parameters defined for clustes lower down in the hierarchy. We'll go into more detail about this shortly.</li>
+</ul>
+<h2 id="components-in-clusters">Components in clusters</h2>
+<p>Adding a component to a cluster involves add a component key to the <code>_components</code> key inside <em>either</em> the <code>cluster.jsonnet</code> or the <code>params.jsonnet</code>.</p>
+<p>Here's an example:</p>
+<pre><code class="jsonnet">_components+: {
+  sealed_secrets: { path: 'components/sealed_secrets' },
+},
+</code></pre>
+
+<p>Notice we're using the jsonnet <code>+</code> operator to make sure we're appending this to the list of components for that cluster, which will ensure the inheritance system works</p>
+<h2 id="cluster-parameters">Cluster parameters</h2>
+<p>Once you've initialized a component for a cluster, you can then start to override parameters for that component. You do this by simply defining a jsonnet key with the named parameters in it. Here's an example:</p>
+<pre><code class="jsonnet">external_dns+: {
+    provider: 'cloudflare',
+    txtPrefix: 'dev1',
+    txtOwnerId: 'dev1-',
+    domainFilters: [
+      'example.com',
+    ],
+    tolerateMasters: false,
+  },
+</code></pre>
+
+<h2 id="hierarchy-system">Hierarchy System</h2>
+<p>The hierarchy system is a very powerful part or kr8. It allows you to remove duplication of parameter and component definitions. Take the previous cluster layout as an example:</p>
+<pre><code>clusters
+├── development
+│   └── dev1
+│       └── cluster.jsonnet
+├── params.jsonnet
+└── production
+    ├── params.jsonnet
+    ├── prod1
+    │   └── cluster.jsonnet
+    └── prod2
+        └── cluster.jsonnet
+</code></pre>
+
+<p>You can use the hierarchy system to ensure you have components installed in all clusters. Let's assume we want to make sure that we want to install the <code>sealed_secrets</code> component in <em>all</em> our clusters. We'd put it in this file:</p>
+<pre><code>clusters
+├── development
+│   └── dev1
+│       └── cluster.jsonnet
+├── params.jsonnet &lt;---- place component here
+└── production
+    ├── params.jsonnet
+    ├── prod1
+    │   └── cluster.jsonnet
+    └── prod2
+        └── cluster.jsonnet
+</code></pre>
+
+<p>Alongside that, let's assume all our production clusters are using the same external_dns domain name. We can define that like so:</p>
+<pre><code>clusters
+├── development
+│   └── dev1
+│       └── cluster.jsonnet
+├── params.jsonnet
+└── production
+    ├── params.jsonnet &lt;--- place external_dns configuration here
+    ├── prod1
+    │   └── cluster.jsonnet
+    └── prod2
+        └── cluster.jsonnet
+</code></pre>
+
+<p>kr8 will look for the smallest unit of configuration, so if you want one cluster to be slightly different inside a hierarchy unit, you can continue to override components and parameters inside a clusters' <code>cluster.jsonnet</code> file.</p>
                 
                   
                 
