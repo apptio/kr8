@@ -45,7 +45,7 @@ set-output()
   fi
   if [ ! -z "$KR8_METADATA_DIR" ]
   then
-    metaDir="$KR8_METADATA_DIR"
+    metaDir="$KR8_METADATA_DIR/${KR8_COMPONENT}"
   else
     metaDir="${KR8_BASE}/metadata//${KR8_CLUSTER}/${KR8_COMPONENT}"
   fi
@@ -73,7 +73,13 @@ _helm-render() {
   # record metadata
   set-meta 
 
-  helm template --name "$releasename" --namespace "$namespace" --values  "$metaDir/${_chart}-values.jsonnet" "./charts/${_chart}" | kr8 yaml helmclean > "$_outfile"
+  if [[ $(helm version --client --short) =~ ^v3 ]]
+  then
+    local userelname="$releasename"
+  else
+    local userelname="--name $releasename"
+  fi
+  helm template $userelname --namespace "$namespace" --values  "$metaDir/${_chart}-values.jsonnet" "./charts/${_chart}" | kr8 yaml helmclean > "$_outfile"
 }
 
 helm-render() {
