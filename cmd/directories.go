@@ -61,13 +61,13 @@ func getClusters(searchDir string) (Clusters, error) {
 
 func getCluster(searchDir string, clusterName string) string {
 
-	fileList := make([]string, 0)
-	//clusterName := make([]string, 0)
-	//pathName := make([]string, 0)
+	var clusterPath string
 
 	e := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
-		if strings.Contains(path, clusterName) {
-			fileList = append(fileList, path)
+		dir, file := filepath.Split(path)
+		fmt.Println("path: ", filepath.Base(dir), dir, file)
+		if filepath.Base(dir) == clusterName && file == "cluster.jsonnet" {
+			clusterPath = path
 			return nil
 		} else {
 			return err
@@ -78,32 +78,10 @@ func getCluster(searchDir string, clusterName string) string {
 		log.Fatal("Error building cluster list: ", e)
 	}
 
-	// Die if there's no cluster with name
-	if len(fileList) < 1 {
-		log.Fatal("Could not find cluster: ", clusterName)
-	}
-
-	// var for storing clusterpath
-	var clusterPath string
-
-	// range over the files
-	for _, file := range fileList {
-
-		// split the file string
-		splitFile := strings.Split(file, "/")
-		// get the filename
-		fileName := splitFile[len(splitFile)-1]
-
-		// if the filename == cluster.jsonnet..
-		if fileName == "cluster.jsonnet" {
-			clusterPath = file
-		}
-	}
 	if clusterPath == "" {
 		log.Fatal("Could not find cluster: ", clusterName)
 	}
 
-	// return it
 	return clusterPath
 
 }
