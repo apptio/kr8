@@ -65,7 +65,6 @@ func getCluster(searchDir string, clusterName string) string {
 
 	e := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
 		dir, file := filepath.Split(path)
-		fmt.Println("path: ", filepath.Base(dir), dir, file)
 		if filepath.Base(dir) == clusterName && file == "cluster.jsonnet" {
 			clusterPath = path
 			return nil
