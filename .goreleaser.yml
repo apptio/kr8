@@ -14,31 +14,33 @@ builds:
     main: .
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
     binary: kr8
-archive:
-  format: tar.gz
-  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-  files:
-  - licence*
-  - LICENCE*
-  - license*
-  - LICENSE*
-  - readme*
-  - README*
-  - changelog*
-  - CHANGELOG*
-  - scripts/*
-nfpm:
-  vendor: Apptio TechOps
-  homepage: "https://github.com/apptio/kr8"
-  maintainer: Lee Briggs <lbriggs@apptio.com>
-  description: "Opinionated configuration management tool for Kubernetes Cluster"
-  license: MIT
-  formats:
-    - rpm
-    - deb
-  bindir: /usr/local/bin
-  files:
-    "scripts/kr8-helpers": "/usr/local/bin/kr8-helpers"
+archives:
+  -
+    format: tar.gz
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    files:
+    - licence*
+    - LICENCE*
+    - license*
+    - LICENSE*
+    - readme*
+    - README*
+    - changelog*
+    - CHANGELOG*
+    - scripts/*
+nfpms:
+  -
+    vendor: Apptio TechOps
+    homepage: "https://github.com/apptio/kr8"
+    maintainer: Lee Briggs <lbriggs@apptio.com>
+    description: "Opinionated configuration management tool for Kubernetes Cluster"
+    license: MIT
+    formats:
+      - rpm
+      - deb
+    bindir: /usr/local/bin
+    files:
+      "scripts/kr8-helpers": "/usr/local/bin/kr8-helpers"
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
 dist: dist
@@ -52,21 +54,22 @@ dockers:
       - "--label=org.label-schema.schema-version=1.0"
       - "--label=org.label-schema.version={{.Version}}"
       - "--label=org.label-schema.name={{.ProjectName}}"
-brew:
-  github:
-    owner: apptio
-    name: homebrew-tap
+brews:
+  -
+    github:
+      owner: apptio
+      name: homebrew-tap
 
-  commit_author:
-    name: release
-    email: release@apptio.com
+    commit_author:
+      name: release
+      email: release@apptio.com
 
-  homepage: "https://kr8.rocks"
-  description: "Opinionated configuration management tool for Kubernetes Cluster"
-  install: |
-    bin.install "kr8"
-    bin.install "scripts/kr8-helpers"
-  dependencies:
-    - kubernetes-helm
-    - jsonnet
-    - go-task/tap/go-task
+    homepage: "https://kr8.rocks"
+    description: "Opinionated configuration management tool for Kubernetes Cluster"
+    install: |
+      bin.install "kr8"
+      bin.install "scripts/kr8-helpers"
+    dependencies:
+      - kubernetes-helm
+      - jsonnet
+      - go-task/tap/go-task
