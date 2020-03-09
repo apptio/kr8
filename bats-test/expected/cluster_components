@@ -1,0 +1,8 @@
+{
+    "comp1": {
+        "path": "components/comp1"
+    },
+    "comp2": {
+        "path": "components/comp2"
+    }
+}

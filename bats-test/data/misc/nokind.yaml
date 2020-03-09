@@ -1,0 +1,7 @@
+---
+foo: bar
+key: value
+alist:
+  - 1
+  - 2
+  - 3
