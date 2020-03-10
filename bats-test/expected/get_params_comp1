@@ -16,5 +16,10 @@ comp1
         "image": "comp1:1.0.0",
         "namespace": "default",
         "release_name": "comp1"
+    },
+    "comp2": {
+        "p_cluster": "cluster",
+        "p_cluster_jsonnet": "cluster_jsonnet",
+        "p_site_params": "site_params"
     }
 }

@@ -19,3 +19,7 @@ $KR8 $KR8_ARGS jsonnet render -C comp1 -F yaml data/components/comp1/comp1.jsonn
 $KR8 $KR8_ARGS jsonnet render -C comp1 -F json data/components/comp1/comp1_list.jsonnet > expected/jsonnet_comp1_list_json
 $KR8 $KR8_ARGS jsonnet render -C comp1 -F yaml data/components/comp1/comp1_list.jsonnet > expected/jsonnet_comp1_list_yaml
 $KR8 $KR8_ARGS jsonnet render -C comp1 -F stream data/components/comp1/comp1_list.jsonnet > expected/jsonnet_comp1_list_stream
+
+# With --clusterparams
+$KR8 $KR8_ARGS jsonnet render -C comp2 -F yaml data/components/comp2/comp2.jsonnet \
+  --clusterparams data/misc/cluster_params.jsonnet > expected/jsonnet_comp2_with_file_yaml

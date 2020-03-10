@@ -21,6 +21,11 @@ CLUSTER=bats
   diff <(echo "$output") <(echo "$expected")
 }
 
+## The params tests also effectively test param hierarchy at all levels with "comp2"
+## FIXME: Params above the cluster/<x>/params.jsonnet hierarchy bleed into the
+##        params no matter which component is requested.  Is this correct?
+##        "comp1" displays this behavior in a test in case it changes
+
 @test "Check cluster params for all components" {
   expected=$(<expected/cluster_params)
   run $KR8 $KR8_ARGS cluster params -c "$CLUSTER"
@@ -31,6 +36,14 @@ CLUSTER=bats
 @test "Check cluster params for one component" {
   expected=$(<expected/cluster_params_comp1)
   run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" -C comp1
+  [ "$status" -eq 0 ]
+  diff <(echo "$output") <(echo "$expected")
+}
+
+# Only "cluster" implements --clusterparams, not "get"
+@test "Check cluster params with file override" {
+  expected=$(<expected/cluster_params_file)
+  run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" --clusterparams data/misc/cluster_params.jsonnet
   [ "$status" -eq 0 ]
   diff <(echo "$output") <(echo "$expected")
 }

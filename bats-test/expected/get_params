@@ -20,6 +20,10 @@
     "comp2": {
         "image": "comp2:latest",
         "namespace": "default",
+        "p_cluster": "cluster",
+        "p_cluster_jsonnet": "cluster_jsonnet",
+        "p_component": "component",
+        "p_site_params": "site_params",
         "release_name": "comp2"
     }
 }

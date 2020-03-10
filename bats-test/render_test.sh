@@ -33,8 +33,8 @@ CLUSTER=bats
 # this is a bug where we stacktrace if --component isn't set
 # FIXME: could be better
 @test "Check render jsonnet parsing without component - FAIL" {
-  expected=$(<expected/jsonnet_comp1_jsonnet)
-  run $KR8 $KR8_ARGS render jsonnet -c bats data/components/comp1/comp1.json
+  expected=$(<expected/jsonnet_comp1_json)
+  run $KR8 $KR8_ARGS render jsonnet -c bats data/components/comp1/comp1.jsonnet
   [ "$status" -eq 2 ]
 }
 
