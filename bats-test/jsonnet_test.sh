@@ -83,7 +83,7 @@ CLUSTER=bats
   diff <(echo "$output") <(echo "$expected")
 }
 
-# Only "jsonnet render" implements --clusterparams, not "render jsonnet" ?
+# Test with --clusterparams
 @test "Check jsonnet parsing with --clusterparams" {
   expected=$(<expected/jsonnet_comp2_with_file_stream)
   run $KR8 $KR8_ARGS jsonnet render -C comp2 -F yaml data/components/comp2/comp2.jsonnet \

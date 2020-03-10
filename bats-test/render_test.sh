@@ -83,6 +83,26 @@ CLUSTER=bats
   diff <(echo "$output") <(echo "$expected")
 }
 
+# Test with --clusterparams
+@test "Check render jsonnet parsing with --clusterparams" {
+  expected=$(<expected/jsonnet_comp2_with_file_stream)
+  run $KR8 $KR8_ARGS render jsonnet -C comp2 -F yaml data/components/comp2/comp2.jsonnet \
+    --clusterparams data/misc/cluster_params.jsonnet
+  [ "$status" -eq 0 ]
+  diff <(echo "$output") <(echo "$expected")
+}
+
+# FIXME: stacktrace if we call a component that doesn't exist in the --clusterparams file
+#        even if that component exists and has its own params
+#        Only the clusterprams file gets used, even blanking other params
+@test "Check render jsonnet parsing with --clusterparams" {
+  #expected=$(<expected/jsonnet_comp2_with_file_stream)
+  run $KR8 $KR8_ARGS render jsonnet -C comp1 -F stream data/components/comp2/comp1_list.jsonnet \
+    --clusterparams data/misc/cluster_params.jsonnet
+  [ "$status" -eq 2 ]
+  #diff <(echo "$output") <(echo "$expected")
+}
+
 # helmclean tests - use "yaml" command generated files
 
 # Stacktrace on bad YAML

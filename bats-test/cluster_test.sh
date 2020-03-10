@@ -33,17 +33,54 @@ CLUSTER=bats
   diff <(echo "$output") <(echo "$expected")
 }
 
-@test "Check cluster params for one component" {
+@test "Check cluster params for one component with cluster config (-C)" {
   expected=$(<expected/cluster_params_comp1)
   run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" -C comp1
   [ "$status" -eq 0 ]
   diff <(echo "$output") <(echo "$expected")
 }
 
-# Only "cluster" implements --clusterparams, not "get"
+@test "Check cluster params for one component only (-P)" {
+  expected=$(<expected/cluster_params_comp2)
+  run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" -P comp2
+  [ "$status" -eq 0 ]
+  diff <(echo "$output") <(echo "$expected")
+}
+
 @test "Check cluster params with file override" {
   expected=$(<expected/cluster_params_file)
   run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" --clusterparams data/misc/cluster_params.jsonnet
+  [ "$status" -eq 0 ]
+  diff <(echo "$output") <(echo "$expected")
+}
+
+# Check behavior on a component that doesn't exist
+@test "Check cluster params with unset component (-P)" {
+  # This is wonky because of "echo" and fmt.Println, but matches anyway
+  expected=""
+  run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" -P no_component
+  [ "$status" -eq 0 ]
+  diff <(echo "$output") <(echo "$expected")
+}
+
+# Check behavior on a component that doesn't exist
+@test "Check cluster params with unset component (-C)" {
+  expected=$(<expected/cluster_params_no_comp)
+  run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" -C no_component
+  [ "$status" -eq 0 ]
+  diff <(echo "$output") <(echo "$expected")
+}
+
+# --notunset has interesting behavior, and only exists on "cluster", not on "get"
+@test "Check cluster params with unset component (-P) and --nounset flag - FAIL" {
+  run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" -P no_component --notunset
+  [ "$status" -eq 1 ]
+}
+
+# But this *works* and gives cluster config + component list
+@test "Check cluster params with unset component (-C) and --nounset flag" {
+  expected=$(<expected/cluster_params_no_comp)
+  run $KR8 $KR8_ARGS cluster params -c "$CLUSTER" -C no_component --notunset
   [ "$status" -eq 0 ]
   diff <(echo "$output") <(echo "$expected")
 }
