@@ -1,0 +1,19 @@
+{
+    "_cluster": {
+        "cluster_name": "bats",
+        "cluster_type": "fake"
+    },
+    "_components": {
+        "comp1": {
+            "path": "components/comp1"
+        },
+        "comp2": {
+            "path": "components/comp2"
+        }
+    },
+    "comp2": {
+        "p_cluster": "cluster",
+        "p_cluster_jsonnet": "cluster_jsonnet",
+        "p_site_params": "site_params"
+    }
+}

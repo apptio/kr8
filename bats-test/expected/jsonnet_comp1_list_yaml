@@ -1,0 +1,8 @@
+- cluster:
+    cluster_name: bats
+    cluster_type: fake
+- config:
+    image: comp1:1.0.0
+    namespace: default
+    release_name: comp1
+

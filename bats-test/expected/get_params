@@ -1,0 +1,29 @@
+
+{
+    "_cluster": {
+        "cluster_name": "bats",
+        "cluster_type": "fake"
+    },
+    "_components": {
+        "comp1": {
+            "path": "components/comp1"
+        },
+        "comp2": {
+            "path": "components/comp2"
+        }
+    },
+    "comp1": {
+        "image": "comp1:1.0.0",
+        "namespace": "default",
+        "release_name": "comp1"
+    },
+    "comp2": {
+        "image": "comp2:latest",
+        "namespace": "default",
+        "p_cluster": "cluster",
+        "p_cluster_jsonnet": "cluster_jsonnet",
+        "p_component": "component",
+        "p_site_params": "site_params",
+        "release_name": "comp2"
+    }
+}

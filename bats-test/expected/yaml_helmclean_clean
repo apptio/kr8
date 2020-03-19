@@ -1,0 +1,14 @@
+---
+alist:
+- 1
+- 2
+- 3
+foo: bar
+key: value
+kind: Service
+
+---
+image: somewhere:latest
+key2: value2
+kind: Pod
+
