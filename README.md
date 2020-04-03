@@ -14,7 +14,7 @@ kr8 consists of:
  - [Task](https://github.com/go-task/task) - a third party Go binary for executing tasks
  - Configs - A configuration directory which contains config for clusters and the components installed into those clusters
 
-kr8 is not designed to be a tool to help you install and deploy applications. It's specifically designed to manage and maintain configuration for the cluster level services. For more information, see the [components](##components) section.
+kr8 is not designed to be a tool to help you install and deploy applications. It's specifically designed to manage and maintain configuration for the cluster level services. For more information, see the [components](docs/components) section.
 
 In order to use kr8, you'll need a configuration repository to go with this binary. See the [example](https://github.com/apptio/kr8-configs) repo for more information.
 
@@ -43,9 +43,9 @@ A cluster is a Kubernetes cluster running in a cloud provider, datacenter or els
 
 Clusters have:
 
-  - cluster configuration, which can be used as part of the Jsonnet configuration later. This consists of things like the cluster name, type, region etc
-  - components, which you'd like to install in a cluster
-  - component configuration, which is modifications to a component which are specific to a cluster. An example of this might be the path to an SSL certificate for the nginx-ingress controller, which may be different across cloud providers.
+  - Cluster configuration, which can be used as part of the Jsonnet configuration later. This consists of things like the cluster name, type, region etc
+  - Components, which you'd like to install in a cluster
+  - Component configuration, which is modifications to a component which are specific to a cluster. An example of this might be the path to an SSL certificate for the nginx-ingress controller, which may be different across cloud providers.
 
 ## Taskfiles
 
@@ -57,7 +57,7 @@ All configuration for kr8 is written in [Jsonnet](https://jsonnet.org/). Jsonnet
 
 # Building
 
-See the [docs](docs/BUILDING.md)
+See the [Building](docs/building.md) documentation.
 
 # Contributing
 
@@ -68,7 +68,3 @@ Fork the repo in github and send a merge request!
 There are currently no tests, and the code is not very [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
 This was (one of) Apptio's first exercise in Go, and pull requests are very welcome.
-  
-
-
-
