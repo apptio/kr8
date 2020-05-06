@@ -7,12 +7,13 @@ import (
 	//"github.com/olekukonko/tablewriter"
 	"encoding/json"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/tidwall/gjson"
 )
 
 type ComponentDef struct {
@@ -162,7 +163,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentName s
 	}
 	componentDefaultsMerged = componentDefaultsMerged + "}"
 
-	compParams = renderJsonnet(cmd, params, "", true, componentDefaultsMerged)
+	compParams = renderJsonnet(cmd, params, "", false, componentDefaultsMerged)
 
 	return compParams
 }
