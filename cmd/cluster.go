@@ -22,11 +22,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 )

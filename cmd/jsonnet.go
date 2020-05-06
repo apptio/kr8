@@ -271,7 +271,11 @@ var jsonnetrenderCmd = &cobra.Command{
 		// pass component, _cluster and _components as extvars
 		vm.ExtCode("kr8_cluster", config+"._cluster")
 		vm.ExtCode("kr8_components", config+"._components")
-		vm.ExtCode("kr8", config+"."+componentName)
+		vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
+		vm.ExtCode("kr8_unpruned", config+"."+componentName)
+
+		log.Debug("Unpruned")
+
 		if pruneFlag {
 			input = "std.prune(import '" + args[0] + "')"
 		} else {

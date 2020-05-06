@@ -10,9 +10,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"os"
 )
 
 var renderCmd = &cobra.Command{
@@ -44,7 +45,9 @@ var renderjsonnetCmd = &cobra.Command{
 		// pass component, _cluster and _components as extvars
 		vm.ExtCode("kr8_cluster", config+"._cluster")
 		vm.ExtCode("kr8_components", config+"._components")
-		vm.ExtCode("kr8", config+"."+componentName)
+		vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
+		vm.ExtCode("kr8_unpruned", config+"."+componentName)
+
 		if pruneFlag {
 			input = "std.prune(import '" + args[0] + "')"
 		} else {
