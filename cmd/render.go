@@ -43,8 +43,8 @@ var renderjsonnetCmd = &cobra.Command{
 
 		var input string
 		// pass component, _cluster and _components as extvars
-		vm.ExtCode("kr8_cluster", config+"._cluster")
-		vm.ExtCode("kr8_components", config+"._components")
+		vm.ExtCode("kr8_cluster", "std.prune("+config+"._cluster)")
+		vm.ExtCode("kr8_components", "std.prune("+config+"._components)")
 		vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
 		vm.ExtCode("kr8_unpruned", config+"."+componentName)
 
