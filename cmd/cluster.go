@@ -84,7 +84,7 @@ var paramsCmd = &cobra.Command{
 			log.Fatal("Please specify a --cluster name and/or --clusterparams")
 		}
 
-		j := renderClusterParams(cmd, clusterName, componentName, clusterParams)
+		j := renderClusterParams(cmd, clusterName, componentName, clusterParams, true)
 
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)

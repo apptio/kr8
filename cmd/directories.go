@@ -126,7 +126,7 @@ func getClusterParams(basePath string, targetPath string) []string {
 
 }
 
-func renderClusterParams(cmd *cobra.Command, clusterName string, componentName string, clusterParams string) string {
+func renderClusterParams(cmd *cobra.Command, clusterName string, componentName string, clusterParams string, prune bool) string {
 	if clusterName == "" && clusterParams == "" {
 		log.Fatal("Please specify a --cluster name and/or --clusterparams")
 	}
@@ -163,7 +163,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentName s
 	}
 	componentDefaultsMerged = componentDefaultsMerged + "}"
 
-	compParams = renderJsonnet(cmd, params, "", false, componentDefaultsMerged)
+	compParams = renderJsonnet(cmd, params, "", prune, componentDefaultsMerged)
 
 	return compParams
 }
