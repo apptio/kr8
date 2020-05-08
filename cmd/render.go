@@ -36,7 +36,7 @@ var renderjsonnetCmd = &cobra.Command{
 			log.Fatal("Please specify a --cluster name and/or --clusterparams")
 		}
 
-		config := renderClusterParams(cmd, clusterName, componentName, clusterParams)
+		config := renderClusterParams(cmd, clusterName, componentName, clusterParams, false)
 
 		// VM
 		vm, _ := JsonnetVM(cmd)

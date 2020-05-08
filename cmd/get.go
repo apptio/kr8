@@ -114,7 +114,7 @@ var getparamsCmd = &cobra.Command{
 
 		fmt.Println(componentName)
 
-		j := renderClusterParams(cmd, clusterName, componentName, clusterParams)
+		j := renderClusterParams(cmd, clusterName, componentName, clusterParams, true)
 
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)

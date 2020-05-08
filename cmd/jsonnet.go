@@ -262,19 +262,18 @@ var jsonnetrenderCmd = &cobra.Command{
 			log.Fatal("Please specify a --cluster name and/or --clusterparams")
 		}
 
-		config := renderClusterParams(cmd, clusterName, componentName, clusterParams)
+		config := renderClusterParams(cmd, clusterName, componentName, clusterParams, false)
 
 		// VM
 		vm, _ := JsonnetVM(cmd)
 
 		var input string
 		// pass component, _cluster and _components as extvars
+
 		vm.ExtCode("kr8_cluster", "std.prune("+config+"._cluster)")
 		vm.ExtCode("kr8_components", "std.prune("+config+"._components)")
 		vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
 		vm.ExtCode("kr8_unpruned", config+"."+componentName)
-
-		log.Debug("Unpruned")
 
 		if pruneFlag {
 			input = "std.prune(import '" + args[0] + "')"
