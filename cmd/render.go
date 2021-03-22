@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"encoding/json"
-
 	goyaml "github.com/ghodss/yaml"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"bufio"
@@ -14,6 +11,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"github.com/rs/zerolog/log"
 )
 
 var renderCmd = &cobra.Command{
@@ -29,61 +27,7 @@ var renderjsonnetCmd = &cobra.Command{
 
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
-		clusterName := cluster
-
-		if clusterName == "" && clusterParams == "" {
-			log.Fatal("Please specify a --cluster name and/or --clusterparams")
-		}
-
-		config := renderClusterParams(cmd, clusterName, componentName, clusterParams, false)
-
-		// VM
-		vm, _ := JsonnetVM(cmd)
-
-		var input string
-		// pass component, _cluster and _components as extvars
-		vm.ExtCode("kr8_cluster", "std.prune("+config+"._cluster)")
-		vm.ExtCode("kr8_components", "std.prune("+config+"._components)")
-		vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
-		vm.ExtCode("kr8_unpruned", config+"."+componentName)
-
-		if pruneFlag {
-			input = "std.prune(import '" + args[0] + "')"
-		} else {
-			input = "( import '" + args[0] + "')"
-		}
-		j, err := vm.EvaluateSnippet("file", input)
-
-		if err != nil {
-			log.Panic("Error evaluating jsonnet snippet: ", err)
-		}
-		switch outputFormat {
-		case "yaml":
-			yaml, err := goyaml.JSONToYAML([]byte(j))
-			if err != nil {
-				log.Panic("Error converting JSON to YAML: ", err)
-			}
-			fmt.Println(string(yaml))
-		case "stream": // output yaml stream
-			var o []interface{}
-			if err := json.Unmarshal([]byte(j), &o); err != nil {
-				log.Panic(err)
-			}
-			for _, jobj := range o {
-				fmt.Println("---")
-				buf, err := goyaml.Marshal(jobj)
-				if err != nil {
-					log.Panic(err)
-				}
-				fmt.Println(string(buf))
-			}
-		case "json":
-			formatted := Pretty(j, colorOutput)
-			fmt.Println(formatted)
-		default:
-			log.Fatal("Output format must be json, yaml or stream")
-		}
+		jsonnetrenderCmd.Run(cmd,args)
 	},
 }
 
@@ -99,14 +43,14 @@ var helmcleanCmd = &cobra.Command{
 			if err == io.EOF {
 				break
 			} else if err != nil {
-				log.Panic("Error decoding decoding yaml stream", err)
+				log.Fatal().Err(err).Msg("Error decoding decoding yaml stream")
 			}
 			if len(bytes) == 0 {
 				continue
 			}
 			jsondata, err := yaml.ToJSON(bytes)
 			if err != nil {
-				log.Panic("Error encoding yaml to JSON", err)
+				log.Fatal().Err(err).Msg("Error encoding yaml to JSON")
 			}
 			if string(jsondata) == "null" {
 				// skip empty json
@@ -114,14 +58,14 @@ var helmcleanCmd = &cobra.Command{
 			}
 			_, _, err = unstructured.UnstructuredJSONScheme.Decode(jsondata, nil, nil)
 			if err != nil {
-				log.Panic("Error handling unstructured JSON", err)
+				log.Fatal().Err(err).Msg("Error handling unstructured JSON")
 			}
 			jsa = append(jsa, jsondata)
 		}
 		for _, j := range jsa {
 			out, err := goyaml.JSONToYAML(j)
 			if err != nil {
-				log.Panic("Error encoding JSON to YAML", err)
+				log.Fatal().Err(err).Msg("Error encoding JSON to YAML")
 			}
 			fmt.Println("---")
 			fmt.Println(string(out))

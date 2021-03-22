@@ -28,13 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
-
-	log "github.com/sirupsen/logrus"
-)
-
-var (
-	clusterParams string
-	formatted     string
+	"github.com/rs/zerolog/log"
 )
 
 // clusterCmd represents the cluster command
@@ -54,7 +48,7 @@ var listCmd = &cobra.Command{
 		clusters, err := getClusters(clusterDir)
 
 		if err != nil {
-			log.Fatal("Error getting cluster: ", err)
+			log.Fatal().Err(err).Msg("Error getting cluster")
 		}
 
 		var entry []string
@@ -81,21 +75,25 @@ var paramsCmd = &cobra.Command{
 		clusterName := viper.GetString("cluster")
 
 		if clusterName == "" && clusterParams == "" {
-			log.Fatal("Please specify a --cluster name and/or --clusterparams")
+			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
 		}
 
-		j := renderClusterParams(cmd, clusterName, componentName, clusterParams, true)
+		var  clist []string
+		if componentName != "" {
+			clist = append(clist, componentName)
+		}
+		j := renderClusterParams(cmd, clusterName, clist, clusterParams, true)
 
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			notunset, _ := cmd.Flags().GetBool("notunset")
 			if notunset && value.String() == "" {
-				log.Fatal("Error getting param: ", paramPath)
+				log.Fatal().Msg("Error getting param: " + paramPath)
 			} else {
 				fmt.Println(value) // no formatting because this isn't always json, this is just the value of a field
 			}
 		} else {
-			formatted = Pretty(j, colorOutput)
+			formatted := Pretty(j, colorOutput)
 			fmt.Println(formatted)
 		}
 
@@ -111,7 +109,7 @@ var componentsCmd = &cobra.Command{
 		clusterName := viper.GetString("cluster")
 
 		if clusterName == "" && clusterParams == "" {
-			log.Fatal("Please specify a --cluster name and/or --clusterparams")
+			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
 		}
 
 		var params []string
@@ -127,13 +125,13 @@ var componentsCmd = &cobra.Command{
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {
-				log.Fatal("Error getting param: ", paramPath)
+				log.Fatal().Msg("Error getting param: " + paramPath)
 			} else {
-				formatted = Pretty(j, colorOutput)
+				formatted := Pretty(j, colorOutput)
 				fmt.Println(formatted)
 			}
 		} else {
-			formatted = Pretty(j, colorOutput)
+			formatted := Pretty(j, colorOutput)
 			fmt.Println(formatted)
 		}
 

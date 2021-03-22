@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/fatih/color"
 	"github.com/hokaccha/go-prettyjson"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 func Pretty(input string, colorOutput bool) string {
@@ -19,7 +19,7 @@ func Pretty(input string, colorOutput bool) string {
 	formatted, err := f.Format([]byte(input))
 
 	if err != nil {
-		log.Panic("Error formatting JSON: ", err)
+		log.Fatal().Err(err).Msg("Error formatting JSON")
 	}
 
 	return string(formatted)

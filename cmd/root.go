@@ -27,7 +27,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -35,6 +36,9 @@ var (
 	baseDir      string
 	clusterDir   string
 	componentDir string
+	clusterParams string
+	cluster	string
+
 	debug        bool
 	colorOutput  bool
 )
@@ -48,9 +52,6 @@ var RootCmd = &cobra.Command{
 	Short: "Kubernetes config parameter framework",
 	Long: `A tool to generate Kubernetes configuration from a hierarchy
 	of jsonnet files`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
@@ -85,8 +86,12 @@ func initConfig() {
 	}
 
 	if debug {
-		log.SetLevel(log.DebugLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
+
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
 	viper.SetConfigName(".kr8") // name of config file (without extension)
 	viper.AddConfigPath(".")
@@ -95,19 +100,19 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	baseDir = viper.GetString("base")
-	log.Debug("Using base directory: ", baseDir)
+	log.Debug().Msg("Using base directory: "+ baseDir)
 	clusterDir = viper.GetString("clusterdir")
 	if clusterDir == "" {
 		clusterDir = baseDir + "/clusters"
 	}
-	log.Debug("Using cluster directory: ", clusterDir)
+	log.Debug().Msg("Using cluster directory: "+ clusterDir)
 	if componentDir == "" {
 		componentDir = baseDir + "/components"
 	}
-	log.Debug("Using component directory: ", componentDir)
+	log.Debug().Msg("Using component directory: "+ componentDir)
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		log.Debug("Using config file:", viper.ConfigFileUsed())
+		log.Debug().Msg("Using config file:"+ viper.ConfigFileUsed())
 	}
 
 }
