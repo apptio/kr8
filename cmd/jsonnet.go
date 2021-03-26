@@ -14,11 +14,11 @@ import (
 	goyaml "github.com/ghodss/yaml"
 	jsonnet "github.com/google/go-jsonnet"
 	jsonnetAst "github.com/google/go-jsonnet/ast"
+	"github.com/grafana/tanka/pkg/helm"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"github.com/grafana/tanka/pkg/helm"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -122,7 +122,7 @@ func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool,
 	}
 
 	// render the jsonnet
-	out, err := vm.EvaluateSnippet(source, jsonnetImport)
+	out, err := vm.EvaluateAnonymousSnippet(source, jsonnetImport)
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
@@ -284,7 +284,7 @@ var jsonnetrenderCmd = &cobra.Command{
 		} else {
 			input = "( import '" + args[0] + "')"
 		}
-		j, err := vm.EvaluateSnippet(args[0], input)
+		j, err := vm.EvaluateAnonymousSnippet("file", input)
 
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
