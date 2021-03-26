@@ -82,7 +82,7 @@ var paramsCmd = &cobra.Command{
 		if componentName != "" {
 			clist = append(clist, componentName)
 		}
-		j := renderClusterParams(cmd, clusterName, clist, clusterParams, true)
+		j := renderClusterParams(cmd, clusterName, clist, clusterParams, false)
 
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
@@ -121,7 +121,7 @@ var componentsCmd = &cobra.Command{
 			params = append(params, clusterParams)
 		}
 
-		j := renderJsonnet(cmd, params, "._components", true, "")
+		j := renderJsonnet(cmd, params, "._components", true, "", "clustercomponents")
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {

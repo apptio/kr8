@@ -27,10 +27,10 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 
 	// get list of components for cluster
 	params := getClusterParams(clusterDir, getCluster(clusterDir, clusterName))
-	clusterComponents := gjson.Parse(renderJsonnet(cmd, params, "._components", false, "")).Map()
+	clusterComponents := gjson.Parse(renderJsonnet(cmd, params, "._components", false, "", "clustercomponents")).Map()
 
 	// get kr8 settings for cluster
-	kr8Spec := gjson.Parse(renderJsonnet(cmd, params, "._kr8_spec", false, ""))
+	kr8Spec := gjson.Parse(renderJsonnet(cmd, params, "._kr8_spec", false, "","kr8_spec"))
 	postProcessorFunction := kr8Spec.Get("postprocessor").String()
 
 	var clGenerateDir string
@@ -49,7 +49,10 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 	clusterDir := clGenerateDir + "/" + clusterName
 
 	// if this is true, we don't use the full file path to generate output file names
-	generate_short_names := kr8Spec.Get("generate_short_names").Bool()
+	generateShortNames := kr8Spec.Get("generate_short_names").Bool()
+
+	// if this is true, we prune component parameters
+	pruneParams := kr8Spec.Get("prune_params").Bool()
 
 	// create generateDir
 	if _, err := os.Stat(clGenerateDir); os.IsNotExist(err) {
@@ -90,28 +93,13 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 	// render full params for cluster for all selected components
 	config := renderClusterParams(cmd, clusterName, compList, clusterParams, false)
 
-	// JsonnetVM
-	vm, _ := JsonnetVM(cmd)
-
-	// pass component, _cluster and _components as extvars
-	vm.ExtCode("kr8_cluster", "std.prune("+config+"._cluster)")
-	vm.ExtCode("kr8_components", "std.prune("+config+"._components)")
-
-	// set preprocessor if defined
-	if postProcessorFunction != "" {
-		vm.ExtCode("process", postProcessorFunction)
-	} else {
-		// default postprocessor just copies input
-		vm.ExtCode("process", "function(input) input")
-	}
+	var allconfig string
 
 	for _, componentName := range compList {
+
 		log.Info().Str("cluster", clusterName).
 			Str("component", componentName).
 			Msg("Process component")
-
-		vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
-		vm.ExtCode("kr8_unpruned", config+"."+componentName)
 
 		// get kr8_spec from component's params
 		spec := gjson.Get(config, componentName+".kr8_spec").Map()
@@ -123,6 +111,39 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 				Str("component", componentName).
 				Msg("Component has no kr8_spec. Skipped!")
 			continue
+		}
+
+		// it's faster to create this VM for each component, rather than re-use
+		vm, _ := JsonnetVM(cmd)
+		vm.ExtCode("kr8_cluster", "std.prune("+config+"._cluster)")
+		//vm.ExtCode("kr8_components", "std.prune("+config+"._components)")
+		if postProcessorFunction != "" {
+			vm.ExtCode("process", postProcessorFunction)
+		} else {
+			// default postprocessor just copies input
+			vm.ExtCode("process", "function(input) input")
+		}
+
+		// prune params if required
+		if pruneParams {
+			vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
+		} else  {
+			vm.ExtCode("kr8", config+"."+componentName)
+		}
+
+		// add kr8_allparams extcode with all cluster params
+		if spec["enable_kr8_allparams"].Bool() {
+			// include full render of all component params
+			if allconfig == "" {
+				// only do this if we have not already cached it and don't already have it stored
+				if components == "" {
+					// all component params are in config
+					allconfig = config
+				} else {
+					allconfig = renderClusterParams(cmd, clusterName, []string{}, clusterParams, false)
+				}
+			}
+			vm.ExtCode("kr8_allparams", allconfig)
 		}
 
 		// jpath always includes base lib. Add jpaths from spec if set
@@ -177,21 +198,51 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 
 		// generate each included file
 		for _, include := range spec["includes"].Array() {
-
-			filename := include.String()
-			file_extension := filepath.Ext(filename)
+			var filename string
+			var outputDir string
 			var sfile string
-			if generate_short_names {
-				sbase := filepath.Base(filename)
-				sfile = sbase[0 : len(sbase)-len(file_extension)]
-			} else {
-				// replaces slashes with _ in multi-dir paths and replace extension with yaml
-				sfile = strings.ReplaceAll(filename[0:len(filename)-len(file_extension)], "/", "_")
+
+			itype := include.Type.String()
+			outputDir = componentDir 
+			if itype == "String" {
+				// include is just a string for the filename
+				filename = include.String()
+			} else if itype == "JSON" {
+				// include is a map with multiple fields
+				inc_spec := include.Map()
+				filename = inc_spec["file"].String()
+				if inc_spec["dest_dir"].Exists()  {
+					// handle alternate output directory for file
+					altdir := inc_spec["dest_dir"].String()
+					// dir is always relative to generate dir
+					outputDir = clGenerateDir + "/" + altdir
+					// ensure this directory exists
+					if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+						err = os.Mkdir(outputDir, os.ModePerm)
+						if err != nil {
+							log.Fatal().Err(err).Msg("")
+						}
+					}
+				}
+				if inc_spec["dest_name"].Exists()  {
+					// override destination file name
+					sfile = inc_spec["dest_name"].String()
+				}
 			}
-			outputFile := componentDir + "/" + sfile + ".yaml"
+			file_extension := filepath.Ext(filename)
+			if sfile == "" {
+				if generateShortNames {
+					sbase := filepath.Base(filename)
+					sfile = sbase[0 : len(sbase)-len(file_extension)]
+				} else {
+					// replaces slashes with _ in multi-dir paths and replace extension with yaml
+					sfile = strings.ReplaceAll(filename[0:len(filename)-len(file_extension)], "/", "_")
+				}
+			}
+			outputFile := outputDir + "/" + sfile + ".yaml"
 			log.Debug().Str("cluster", clusterName).
 				Str("component", componentName).
-				Msg("Process file: " + include.String() + " -> " + outputFile)
+				Msg("Process file: " + filename + " -> " + outputFile)
 
 			var input string
 			switch file_extension {

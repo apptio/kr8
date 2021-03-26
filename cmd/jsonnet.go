@@ -87,7 +87,7 @@ func JsonnetVM(cmd *cobra.Command) (*jsonnet.VM, error) {
 }
 
 // Takes a list of jsonnet files and imports each one and mixes them with "+"
-func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool, prepend string) string {
+func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool, prepend string, source string) string {
 
 	// copy the slice so that we don't unitentionally modify the original
 	jsonnetPaths := make([]string, len(files[:0]))
@@ -122,7 +122,7 @@ func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool,
 	}
 
 	// render the jsonnet
-	out, err := vm.EvaluateSnippet("file", jsonnetImport)
+	out, err := vm.EvaluateSnippet(source, jsonnetImport)
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
@@ -284,7 +284,7 @@ var jsonnetrenderCmd = &cobra.Command{
 		} else {
 			input = "( import '" + args[0] + "')"
 		}
-		j, err := vm.EvaluateSnippet("file", input)
+		j, err := vm.EvaluateSnippet(args[0], input)
 
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")

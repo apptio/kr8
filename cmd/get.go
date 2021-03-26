@@ -80,7 +80,7 @@ var getcomponentsCmd = &cobra.Command{
 			params = append(params, clusterParams)
 		}
 
-		j := renderJsonnet(cmd, params, "._components", true, "")
+		j := renderJsonnet(cmd, params, "._components", true, "", "components")
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {
