@@ -56,14 +56,14 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 
 	// create generateDir
 	if _, err := os.Stat(clGenerateDir); os.IsNotExist(err) {
-		err = os.Mkdir(clGenerateDir, os.ModePerm)
+		err = os.MkdirAll(clGenerateDir, os.ModePerm)
 		if err != nil {
 			log.Fatal().Err(err).Msg("")
 		}
 	}
 	// create cluster dir
 	if _, err := os.Stat(clusterDir); os.IsNotExist(err) {
-		err = os.Mkdir(clusterDir, os.ModePerm)
+		err = os.MkdirAll(clusterDir, os.ModePerm)
 		if err != nil {
 			log.Fatal().Err(err).Msg("")
 		}
@@ -171,7 +171,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 		componentDir := clusterDir + "/" + componentName
 		// create or clean component dir
 		if _, err := os.Stat(componentDir); os.IsNotExist(err) {
-			err := os.Mkdir(componentDir, os.ModePerm)
+			err := os.MkdirAll(componentDir, os.ModePerm)
 			if err != nil {
 				log.Fatal().Err(err).Msg("")
 			}
@@ -218,7 +218,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 					outputDir = clGenerateDir + "/" + altdir
 					// ensure this directory exists
 					if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-						err = os.Mkdir(outputDir, os.ModePerm)
+						err = os.MkdirAll(outputDir, os.ModePerm)
 						if err != nil {
 							log.Fatal().Err(err).Msg("")
 						}
