@@ -84,7 +84,7 @@ var getcomponentsCmd = &cobra.Command{
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {
-				log.Fatal().Msg("Error getting param: "+ paramPath)
+				log.Fatal().Msg("Error getting param: " + paramPath)
 			} else {
 				formatted := Pretty(j, colorOutput)
 				fmt.Println(formatted)
@@ -116,7 +116,7 @@ var getparamsCmd = &cobra.Command{
 			value := gjson.Get(j, paramPath)
 			notunset, _ := cmd.Flags().GetBool("notunset")
 			if notunset && value.String() == "" {
-				log.Fatal().Msg("Error getting param: "+ paramPath)
+				log.Fatal().Msg("Error getting param: " + paramPath)
 			} else {
 				fmt.Println(value) // no formatting because this isn't always json, this is just the value of a field
 			}

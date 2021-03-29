@@ -27,10 +27,10 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 
 	// get list of components for cluster
 	params := getClusterParams(clusterDir, getCluster(clusterDir, clusterName))
-	clusterComponents := gjson.Parse(renderJsonnet(cmd, params, "._components", false, "", "clustercomponents")).Map()
+	clusterComponents := gjson.Parse(renderJsonnet(cmd, params, "._components", true, "", "clustercomponents")).Map()
 
 	// get kr8 settings for cluster
-	kr8Spec := gjson.Parse(renderJsonnet(cmd, params, "._kr8_spec", false, "","kr8_spec"))
+	kr8Spec := gjson.Parse(renderJsonnet(cmd, params, "._kr8_spec", false, "", "kr8_spec"))
 	postProcessorFunction := kr8Spec.Get("postprocessor").String()
 
 	var clGenerateDir string
@@ -127,7 +127,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 		// prune params if required
 		if pruneParams {
 			vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
-		} else  {
+		} else {
 			vm.ExtCode("kr8", config+"."+componentName)
 		}
 
@@ -175,7 +175,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 			if err != nil {
 				log.Fatal().Err(err).Msg("")
 			}
-		} else {
+		} else if !spec["disable_output_clean"].Bool() { // clean component output directory, unless it's disabled
 			// clean component dir
 			d, err := os.Open(componentDir)
 			if err != nil {
@@ -203,7 +203,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 			var sfile string
 
 			itype := include.Type.String()
-			outputDir = componentDir 
+			outputDir = componentDir
 			if itype == "String" {
 				// include is just a string for the filename
 				filename = include.String()
@@ -211,7 +211,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 				// include is a map with multiple fields
 				inc_spec := include.Map()
 				filename = inc_spec["file"].String()
-				if inc_spec["dest_dir"].Exists()  {
+				if inc_spec["dest_dir"].Exists() {
 					// handle alternate output directory for file
 					altdir := inc_spec["dest_dir"].String()
 					// dir is always relative to generate dir
@@ -224,7 +224,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 						}
 					}
 				}
-				if inc_spec["dest_name"].Exists()  {
+				if inc_spec["dest_name"].Exists() {
 					// override destination file name
 					sfile = inc_spec["dest_name"].String()
 				}

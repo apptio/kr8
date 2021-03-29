@@ -68,7 +68,7 @@ and initialize a git repo so you can get started`,
 		}
 
 		// Download the skeletion directory
-		log.Debug().Msg("Downloading skeleton repo from "+ real_url)
+		log.Debug().Msg("Downloading skeleton repo from " + real_url)
 		client := &getter.Client{
 			Src:  real_url,
 			Dst:  args[0],

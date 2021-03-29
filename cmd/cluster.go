@@ -25,10 +25,10 @@ import (
 	"os"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
-	"github.com/rs/zerolog/log"
 )
 
 // clusterCmd represents the cluster command
@@ -78,7 +78,7 @@ var paramsCmd = &cobra.Command{
 			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
 		}
 
-		var  clist []string
+		var clist []string
 		if componentName != "" {
 			clist = append(clist, componentName)
 		}

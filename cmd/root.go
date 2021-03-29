@@ -32,15 +32,15 @@ import (
 )
 
 var (
-	cfgFile      string
-	baseDir      string
-	clusterDir   string
-	componentDir string
+	cfgFile       string
+	baseDir       string
+	clusterDir    string
+	componentDir  string
 	clusterParams string
-	cluster	string
+	cluster       string
 
-	debug        bool
-	colorOutput  bool
+	debug       bool
+	colorOutput bool
 )
 
 // exported Version variable
@@ -100,19 +100,19 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	baseDir = viper.GetString("base")
-	log.Debug().Msg("Using base directory: "+ baseDir)
+	log.Debug().Msg("Using base directory: " + baseDir)
 	clusterDir = viper.GetString("clusterdir")
 	if clusterDir == "" {
 		clusterDir = baseDir + "/clusters"
 	}
-	log.Debug().Msg("Using cluster directory: "+ clusterDir)
+	log.Debug().Msg("Using cluster directory: " + clusterDir)
 	if componentDir == "" {
 		componentDir = baseDir + "/components"
 	}
-	log.Debug().Msg("Using component directory: "+ componentDir)
+	log.Debug().Msg("Using component directory: " + componentDir)
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		log.Debug().Msg("Using config file:"+ viper.ConfigFileUsed())
+		log.Debug().Msg("Using config file:" + viper.ConfigFileUsed())
 	}
 
 }

@@ -9,9 +9,9 @@ import (
 	"io"
 	"os"
 
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"github.com/rs/zerolog/log"
 )
 
 var renderCmd = &cobra.Command{
@@ -27,7 +27,7 @@ var renderjsonnetCmd = &cobra.Command{
 
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		jsonnetrenderCmd.Run(cmd,args)
+		jsonnetrenderCmd.Run(cmd, args)
 	},
 }
 

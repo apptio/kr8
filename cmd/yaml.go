@@ -24,12 +24,12 @@ import (
 	"bufio"
 	"fmt"
 	gyaml "github.com/ghodss/yaml"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"io"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"os"
-	"github.com/rs/zerolog/log"
 )
 
 var yamlCmd = &cobra.Command{
