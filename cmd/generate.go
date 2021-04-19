@@ -194,6 +194,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 					}
 				}
 			}
+			d.Close()
 		}
 
 		// generate each included file
@@ -290,6 +291,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 					log.Fatal().Err(err).Msg("")
 				}
 			}
+			f.Close()
 		}
 	}
 }
