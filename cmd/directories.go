@@ -122,6 +122,22 @@ func getClusterParams(basePath string, targetPath string) []string {
 
 }
 
+// only render cluster params (_cluster), without components
+func renderClusterParamsOnly(cmd *cobra.Command, clusterName string, clusterParams string, prune bool) string {
+	var params []string
+	if clusterName != "" {
+		clusterPath := getCluster(clusterDir, clusterName)
+		params = getClusterParams(clusterDir, clusterPath)
+	}
+	if clusterParams != "" {
+		params = append(params, clusterParams)
+	}
+	renderedParams := renderJsonnet(cmd, params, "._cluster", prune, "", "clusterparams")
+
+	return renderedParams
+}
+
+// render cluster params, merged with one or more component's parameters. Empty componentName list renders all component parameters
 func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames []string, clusterParams string, prune bool) string {
 	if clusterName == "" && clusterParams == "" {
 		log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")

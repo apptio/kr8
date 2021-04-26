@@ -11,15 +11,18 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
 )
 
 var (
-	components  string
-	clusters    string
-	generateDir string
+	components       string
+	clusters         string
+	generateDir      string
+	clIncludes       string
+	allClusterParams map[string]string
 )
 
 func genProcessCluster(cmd *cobra.Command, clusterName string) {
@@ -73,17 +76,18 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 	var compList []string
 	if components != "" {
 		// only process specified component if it's defined in the cluster
-		for _, c := range strings.Split(components, ",") {
-			if _, ok := clusterComponents[c]; ok {
-				compList = append(compList, c)
+		for c, _ := range clusterComponents {
+			for _, b := range strings.Split(components, ",") {
+				matched, _ := regexp.MatchString("^"+b+"$", c)
+				if matched {
+					compList = append(compList, c)
+				}
 			}
 		}
 		if len(compList) == 0 {
 			return
 		}
 	} else {
-		// get list of all components in cluster
-		// FIXME: add filtering here
 		for c, _ := range clusterComponents {
 			compList = append(compList, c)
 		}
@@ -105,11 +109,11 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 		spec := gjson.Get(config, componentName+".kr8_spec").Map()
 		compPath := gjson.Get(config, "_components."+componentName+".path").String()
 
-		// spec is missing // FIXME - this should be fatal, but we are skipping for now
+		// spec is missing?
 		if len(spec) == 0 {
-			log.Warn().Str("cluster", clusterName).
+			log.Fatal().Str("cluster", clusterName).
 				Str("component", componentName).
-				Msg("Component has no kr8_spec. Skipped!")
+				Msg("Component has no kr8_spec")
 			continue
 		}
 
@@ -131,7 +135,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 			vm.ExtCode("kr8", config+"."+componentName)
 		}
 
-		// add kr8_allparams extcode with all cluster params
+		// add kr8_allparams extcode with all component params in the cluster
 		if spec["enable_kr8_allparams"].Bool() {
 			// include full render of all component params
 			if allconfig == "" {
@@ -144,6 +148,19 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 				}
 			}
 			vm.ExtCode("kr8_allparams", allconfig)
+		}
+
+		// add kr8_allclusters extcode with every cluster's cluster level params
+		if spec["enable_kr8_allclusters"].Bool() {
+			// combine all the cluster params into a single object indexed by cluster name
+			var allClusterParamsObject string
+			allClusterParamsObject = "{ "
+			for cl, clp := range allClusterParams {
+				allClusterParamsObject = allClusterParamsObject + "'" + cl + "': " + clp + ","
+
+			}
+			allClusterParamsObject = allClusterParamsObject + "}"
+			vm.ExtCode("kr8_allclusters", allClusterParamsObject)
 		}
 
 		// jpath always includes base lib. Add jpaths from spec if set
@@ -305,19 +322,65 @@ var generateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		var clusterList []string
-		if clusters == "" {
-			// default is all clusters
-			cd, err := getClusters(clusterDir)
-			if err != nil {
-				log.Fatal().Err(err).Msg("Error getting list of clusters")
+
+		// get list of all clusters, render cluster level params for all of them
+		allClusterParams = make(map[string]string)
+		allClusters, err := getClusters(clusterDir)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Error getting list of clusters")
+		}
+		for _, c := range allClusters.Cluster {
+			allClusterParams[c.Name] = renderClusterParamsOnly(cmd, c.Name, "", false)
+		}
+
+		for c, _ := range allClusterParams {
+			if clIncludes != "" {
+				gjresult := gjson.Parse(allClusterParams[c])
+				// filter on cluster parameters, passed in gjson path notation with either
+				// "=" for equality or "~" for regex match
+				var include bool
+				for _, b := range strings.Split(clIncludes, ",") {
+					include = false
+					// equality match
+					kv := strings.SplitN(b, "=", 2)
+					if len(kv) == 2 {
+						if gjresult.Get(kv[0]).String() == kv[1] {
+							include = true
+						}
+					} else {
+						// regex match
+						kv := strings.SplitN(b, "~", 2)
+						if len(kv) == 2 {
+							matched, _ := regexp.MatchString(kv[1], gjresult.Get(kv[0]).String())
+							if matched {
+								include = true
+							}
+						}
+					}
+					if !include {
+						break
+					}
+				}
+				if !include {
+					continue
+				}
 			}
-			for _, c := range cd.Cluster {
-				// FIXME add filtering here
-				clusterList = append(clusterList, c.Name)
+
+			if clusters == "" {
+				// all clusters
+				clusterList = append(clusterList, c)
+			} else {
+				// match --clusters list
+				for _, b := range strings.Split(clusters, ",") {
+					// match cluster names as anchored regex
+					matched, _ := regexp.MatchString("^"+b+"$", c)
+					if matched {
+						clusterList = append(clusterList, c)
+						break
+					}
+				}
+
 			}
-		} else {
-			// use list of clusters that was passed in
-			clusterList = strings.Split(clusters, ",")
 		}
 
 		var wg sync.WaitGroup
@@ -342,8 +405,9 @@ var generateCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(generateCmd)
 	generateCmd.Flags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
-	generateCmd.Flags().StringVarP(&clusters, "clusters", "", "", "clusters to generate")
-	generateCmd.Flags().StringVarP(&components, "components", "", "", "components to generate")
+	generateCmd.Flags().StringVarP(&clusters, "clusters", "", "", "clusters to generate - comma separated list of cluster names and/or regular expressions ")
+	generateCmd.Flags().StringVarP(&components, "components", "", "", "components to generate - comma separated list of component names and/or regular expressions")
 	generateCmd.Flags().StringVarP(&generateDir, "generate-dir", "", "", "output directory")
+	generateCmd.Flags().StringVarP(&clIncludes, "clincludes", "", "", "filter included cluster by matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
 	generateCmd.Flags().IntP("parallel", "", 1, "parallelism")
 }
