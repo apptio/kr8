@@ -9,7 +9,7 @@ require (
 	github.com/fatih/color v1.10.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/google/go-jsonnet v0.17.0
+	github.com/google/go-jsonnet v0.17.1-0.20210325173513-74b3a1b66972
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/grafana/tanka v0.14.0
