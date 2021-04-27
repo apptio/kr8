@@ -71,12 +71,13 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&clusterDir, "clusterdir", "D", "", "kr8 cluster directory")
 	RootCmd.PersistentFlags().StringVarP(&componentDir, "componentdir", "X", "", "kr8 component directory")
 	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing")
-	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", false, "enable colorized output")
+	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", true, "enable colorized output (default). Set to false to disable")
 	RootCmd.PersistentFlags().StringArrayP("jpath", "J", nil, "Directories to add to jsonnet include path. Repeat arg for multiple directories")
 	RootCmd.PersistentFlags().StringSlice("ext-str-file", nil, "Set jsonnet extvar from file contents")
 	viper.BindPFlag("base", RootCmd.PersistentFlags().Lookup("base"))
 	viper.BindPFlag("clusterdir", RootCmd.PersistentFlags().Lookup("clusterdir"))
 	viper.BindPFlag("componentdir", RootCmd.PersistentFlags().Lookup("componentdir"))
+	viper.BindPFlag("color", RootCmd.PersistentFlags().Lookup("color"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -91,13 +92,18 @@ func initConfig() {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
-
 	viper.SetConfigName(".kr8") // name of config file (without extension)
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("$HOME") // adding home directory as first search path
 	viper.SetEnvPrefix("KR8")
 	viper.AutomaticEnv() // read in environment variables that match
+
+	// If a config file is found, read it in.
+	if err := viper.ReadInConfig(); err == nil {
+		log.Debug().Msg("Using config file:" + viper.ConfigFileUsed())
+	}
+	colorOutput = viper.GetBool("color")
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
 
 	baseDir = viper.GetString("base")
 	log.Debug().Msg("Using base directory: " + baseDir)
@@ -110,9 +116,5 @@ func initConfig() {
 		componentDir = baseDir + "/components"
 	}
 	log.Debug().Msg("Using component directory: " + componentDir)
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		log.Debug().Msg("Using config file:" + viper.ConfigFileUsed())
-	}
 
 }
