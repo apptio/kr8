@@ -91,7 +91,7 @@ func initConfig() {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
 
 	viper.SetConfigName(".kr8") // name of config file (without extension)
 	viper.AddConfigPath(".")
