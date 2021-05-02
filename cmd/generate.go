@@ -186,34 +186,15 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 		}
 
 		componentDir := clusterDir + "/" + componentName
-		// create or clean component dir
+		// create component dir if needed
 		if _, err := os.Stat(componentDir); os.IsNotExist(err) {
 			err := os.MkdirAll(componentDir, os.ModePerm)
 			if err != nil {
 				log.Fatal().Err(err).Msg("")
 			}
-		} else if !spec["disable_output_clean"].Bool() { // clean component output directory, unless it's disabled
-			// clean component dir
-			d, err := os.Open(componentDir)
-			if err != nil {
-				log.Fatal().Err(err).Msg("")
-			}
-			defer d.Close()
-			names, err := d.Readdirnames(-1)
-			if err != nil {
-				log.Fatal().Err(err).Msg("")
-			}
-			for _, name := range names {
-				if filepath.Ext(name) == ".yaml" {
-					err = os.RemoveAll(filepath.Join(componentDir, name))
-					if err != nil {
-						log.Fatal().Err(err).Msg("")
-					}
-				}
-			}
-			d.Close()
 		}
 
+		outputFileMap := make(map[string]bool)
 		// generate each included file
 		for _, include := range spec["includes"].Array() {
 			var filename string
@@ -258,6 +239,9 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 				}
 			}
 			outputFile := outputDir + "/" + sfile + ".yaml"
+			// remember output filename for purging files
+			outputFileMap[sfile + ".yaml"] = true
+
 			log.Debug().Str("cluster", clusterName).
 				Str("component", componentName).
 				Msg("Process file: " + filename + " -> " + outputFile)
@@ -283,32 +267,83 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 				log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
 			}
 
-			// write output to generated files as yaml stream
-			f, err := os.Create(outputFile)
-			if err != nil {
-				log.Fatal().Err(err).Msg("")
-			}
-			defer f.Close()
-
+			// create output file contents in a string first, as a yaml stream
 			var o []interface{}
+			var outStr string
 			if err := json.Unmarshal([]byte(j), &o); err != nil {
 				log.Fatal().Err(err).Msg("")
 			}
 			for _, jobj := range o {
-				_, err := f.WriteString("---\n")
-				if err != nil {
-					log.Fatal().Err(err).Msg("")
-				}
+				outStr = outStr + "---\n"
 				buf, err := goyaml.Marshal(jobj)
 				if err != nil {
 					log.Fatal().Err(err).Msg("")
 				}
-				_, err = f.WriteString(string(buf) + "\n")
+				outStr = outStr + string(buf) + "\n"
+			}
+
+			// only write file if it does not exist, or the generated contents does not match what is on disk
+			var updateNeeded bool
+			if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+				log.Debug().Str("cluster", clusterName).
+					Str("component", componentName).
+					Msg("Creating "+ outputFile)
+				updateNeeded = true
+			} else {
+				currentContents, err := ioutil.ReadFile(outputFile)
+				if err != nil {
+					log.Fatal().Err(err).Msg("Error reading file")
+				}
+				if string(currentContents) != outStr {
+					updateNeeded = true
+					log.Debug().Str("cluster", clusterName).
+						Str("component", componentName).
+						Msg("Updating: "+ outputFile)
+				}
+			}
+			if updateNeeded {
+				f, err := os.Create(outputFile)
 				if err != nil {
 					log.Fatal().Err(err).Msg("")
 				}
+				defer f.Close()
+				_, err = f.WriteString(outStr)
+				if err != nil {
+					log.Fatal().Err(err).Msg("")
+				}
+
+				f.Close()
+			} 
+		}
+		// purge any yaml files in the output dir that were not generated
+		if !spec["disable_output_clean"].Bool() {
+			// clean component dir
+			d, err := os.Open(componentDir)
+			if err != nil {
+				log.Fatal().Err(err).Msg("")
 			}
-			f.Close()
+			defer d.Close()
+			names, err := d.Readdirnames(-1)
+			if err != nil {
+				log.Fatal().Err(err).Msg("")
+			}
+			for _, name := range names {
+				if _, ok := outputFileMap[name]; ok {
+					// file is managed
+					continue
+				}
+				if filepath.Ext(name) == ".yaml" {
+					delfile := filepath.Join(componentDir, name)
+					err = os.RemoveAll(delfile)
+					if err != nil {
+						log.Fatal().Err(err).Msg("")
+					}
+					log.Debug().Str("cluster", clusterName).
+						Str("component", componentName).
+						Msg("Deleted: "+ delfile)
+				}
+			}
+			d.Close()
 		}
 	}
 }
