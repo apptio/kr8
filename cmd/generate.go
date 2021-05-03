@@ -12,10 +12,17 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 )
+
+type safeString struct {
+	mu     sync.Mutex
+	config string
+}
 
 var (
 	components       string
@@ -25,7 +32,7 @@ var (
 	allClusterParams map[string]string
 )
 
-func genProcessCluster(cmd *cobra.Command, clusterName string) {
+func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 	log.Debug().Str("cluster", clusterName).Msg("Process cluster")
 
 	// get list of components for cluster
@@ -97,254 +104,272 @@ func genProcessCluster(cmd *cobra.Command, clusterName string) {
 	// render full params for cluster for all selected components
 	config := renderClusterParams(cmd, clusterName, compList, clusterParams, false)
 
-	var allconfig string
+	var allconfig safeString
 
+	var wg sync.WaitGroup
+	//p, _ := ants.NewPool(4)
 	for _, componentName := range compList {
-
-		log.Info().Str("cluster", clusterName).
-			Str("component", componentName).
-			Msg("Process component")
-
-		// get kr8_spec from component's params
-		spec := gjson.Get(config, componentName+".kr8_spec").Map()
-		compPath := gjson.Get(config, "_components."+componentName+".path").String()
-
-		// spec is missing?
-		if len(spec) == 0 {
-			log.Fatal().Str("cluster", clusterName).
-				Str("component", componentName).
-				Msg("Component has no kr8_spec")
-			continue
-		}
-
-		// it's faster to create this VM for each component, rather than re-use
-		vm, _ := JsonnetVM(cmd)
-		vm.ExtCode("kr8_cluster", "std.prune("+config+"._cluster)")
-		//vm.ExtCode("kr8_components", "std.prune("+config+"._components)")
-		if postProcessorFunction != "" {
-			vm.ExtCode("process", postProcessorFunction)
-		} else {
-			// default postprocessor just copies input
-			vm.ExtCode("process", "function(input) input")
-		}
-
-		// prune params if required
-		if pruneParams {
-			vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
-		} else {
-			vm.ExtCode("kr8", config+"."+componentName)
-		}
-
-		// add kr8_allparams extcode with all component params in the cluster
-		if spec["enable_kr8_allparams"].Bool() {
-			// include full render of all component params
-			if allconfig == "" {
-				// only do this if we have not already cached it and don't already have it stored
-				if components == "" {
-					// all component params are in config
-					allconfig = config
-				} else {
-					allconfig = renderClusterParams(cmd, clusterName, []string{}, clusterParams, false)
-				}
-			}
-			vm.ExtCode("kr8_allparams", allconfig)
-		}
-
-		// add kr8_allclusters extcode with every cluster's cluster level params
-		if spec["enable_kr8_allclusters"].Bool() {
-			// combine all the cluster params into a single object indexed by cluster name
-			var allClusterParamsObject string
-			allClusterParamsObject = "{ "
-			for cl, clp := range allClusterParams {
-				allClusterParamsObject = allClusterParamsObject + "'" + cl + "': " + clp + ","
-
-			}
-			allClusterParamsObject = allClusterParamsObject + "}"
-			vm.ExtCode("kr8_allclusters", allClusterParamsObject)
-		}
-
-		// jpath always includes base lib. Add jpaths from spec if set
-		jpath := []string{baseDir + "/lib"}
-		for _, j := range spec["jpaths"].Array() {
-			jpath = append(jpath, baseDir+"/"+compPath+"/"+j.String())
-		}
-		vm.Importer(&jsonnet.FileImporter{
-			JPaths: jpath,
+		wg.Add(1)
+		cName := componentName
+		_ = p.Submit(func() {
+			defer wg.Done()
+			genProcessComponent(cmd, clusterName, cName, clusterDir, clGenerateDir, config, &allconfig, postProcessorFunction, pruneParams, generateShortNames)
 		})
+	}
+	wg.Wait()
 
-		// file imports
-		for k, v := range spec["extfiles"].Map() {
-			vpath := baseDir + "/" + compPath + "/" + v.String() // use full path for file
-			extfile, err := ioutil.ReadFile(vpath)
-			if err != nil {
-				log.Fatal().Err(err).Msg("Error importing extfile")
-			}
-			log.Debug().Str("cluster", clusterName).
-				Str("component", componentName).
-				Msg("Extfile: " + k + "=" + v.String())
-			vm.ExtVar(k, string(extfile))
-		}
+}
 
-		componentDir := clusterDir + "/" + componentName
-		// create component dir if needed
-		if _, err := os.Stat(componentDir); os.IsNotExist(err) {
-			err := os.MkdirAll(componentDir, os.ModePerm)
-			if err != nil {
-				log.Fatal().Err(err).Msg("")
-			}
-		}
+func genProcessComponent(cmd *cobra.Command, clusterName string, componentName string, clusterDir string, clGenerateDir string, config string, allconfig *safeString, postProcessorFunction string, pruneParams bool, generateShortNames bool) {
 
-		outputFileMap := make(map[string]bool)
-		// generate each included file
-		for _, include := range spec["includes"].Array() {
-			var filename string
-			var outputDir string
-			var sfile string
+	log.Info().Str("cluster", clusterName).
+		Str("component", componentName).
+		Msg("Process component")
 
-			itype := include.Type.String()
-			outputDir = componentDir
-			if itype == "String" {
-				// include is just a string for the filename
-				filename = include.String()
-			} else if itype == "JSON" {
-				// include is a map with multiple fields
-				inc_spec := include.Map()
-				filename = inc_spec["file"].String()
-				if inc_spec["dest_dir"].Exists() {
-					// handle alternate output directory for file
-					altdir := inc_spec["dest_dir"].String()
-					// dir is always relative to generate dir
-					outputDir = clGenerateDir + "/" + altdir
-					// ensure this directory exists
-					if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-						err = os.MkdirAll(outputDir, os.ModePerm)
-						if err != nil {
-							log.Fatal().Err(err).Msg("")
-						}
-					}
-				}
-				if inc_spec["dest_name"].Exists() {
-					// override destination file name
-					sfile = inc_spec["dest_name"].String()
-				}
-			}
-			file_extension := filepath.Ext(filename)
-			if sfile == "" {
-				if generateShortNames {
-					sbase := filepath.Base(filename)
-					sfile = sbase[0 : len(sbase)-len(file_extension)]
-				} else {
-					// replaces slashes with _ in multi-dir paths and replace extension with yaml
-					sfile = strings.ReplaceAll(filename[0:len(filename)-len(file_extension)], "/", "_")
-				}
-			}
-			outputFile := outputDir + "/" + sfile + ".yaml"
-			// remember output filename for purging files
-			outputFileMap[sfile + ".yaml"] = true
+	// get kr8_spec from component's params
+	spec := gjson.Get(config, componentName+".kr8_spec").Map()
+	compPath := gjson.Get(config, "_components."+componentName+".path").String()
 
-			log.Debug().Str("cluster", clusterName).
-				Str("component", componentName).
-				Msg("Process file: " + filename + " -> " + outputFile)
+	// spec is missing?
+	if len(spec) == 0 {
+		log.Fatal().Str("cluster", clusterName).
+			Str("component", componentName).
+			Msg("Component has no kr8_spec")
+		return
+	}
 
-			var input string
-			switch file_extension {
-			case ".jsonnet":
-				// file is processed as an ExtCode input, so that we can postprocess it
-				// in the snippet
-				input = "( import '" + baseDir + "/" + compPath + "/" + filename + "')"
-			case ".yaml":
-				input = "std.native('parseYaml')(importstr '" + baseDir + "/" + compPath + "/" + filename + "')"
-			default:
-				log.Fatal().Str("cluster", clusterName).
-					Str("component", componentName).
-					Str("file", filename).
-					Msg("Unsupported file extension")
-			}
+	// it's faster to create this VM for each component, rather than re-use
+	vm, _ := JsonnetVM(cmd)
+	vm.ExtCode("kr8_cluster", "std.prune("+config+"._cluster)")
+	//vm.ExtCode("kr8_components", "std.prune("+config+"._components)")
+	if postProcessorFunction != "" {
+		vm.ExtCode("process", postProcessorFunction)
+	} else {
+		// default postprocessor just copies input
+		vm.ExtCode("process", "function(input) input")
+	}
 
-			vm.ExtCode("input", input)
-			j, err := vm.EvaluateAnonymousSnippet(include.String(), "std.extVar('process')(std.extVar('input'))")
-			if err != nil {
-				log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
-			}
+	// prune params if required
+	if pruneParams {
+		vm.ExtCode("kr8", "std.prune("+config+"."+componentName+")")
+	} else {
+		vm.ExtCode("kr8", config+"."+componentName)
+	}
 
-			// create output file contents in a string first, as a yaml stream
-			var o []interface{}
-			var outStr string
-			if err := json.Unmarshal([]byte(j), &o); err != nil {
-				log.Fatal().Err(err).Msg("")
-			}
-			for _, jobj := range o {
-				outStr = outStr + "---\n"
-				buf, err := goyaml.Marshal(jobj)
-				if err != nil {
-					log.Fatal().Err(err).Msg("")
-				}
-				outStr = outStr + string(buf) + "\n"
-			}
-
-			// only write file if it does not exist, or the generated contents does not match what is on disk
-			var updateNeeded bool
-			if _, err := os.Stat(outputFile); os.IsNotExist(err) {
-				log.Debug().Str("cluster", clusterName).
-					Str("component", componentName).
-					Msg("Creating "+ outputFile)
-				updateNeeded = true
+	// add kr8_allparams extcode with all component params in the cluster
+	if spec["enable_kr8_allparams"].Bool() {
+		// include full render of all component params
+		allconfig.mu.Lock()
+		if allconfig.config == "" {
+			// only do this if we have not already cached it and don't already have it stored
+			if components == "" {
+				// all component params are in config
+				allconfig.config = config
 			} else {
-				currentContents, err := ioutil.ReadFile(outputFile)
-				if err != nil {
-					log.Fatal().Err(err).Msg("Error reading file")
-				}
-				if string(currentContents) != outStr {
-					updateNeeded = true
-					log.Debug().Str("cluster", clusterName).
-						Str("component", componentName).
-						Msg("Updating: "+ outputFile)
-				}
+				defer allconfig.mu.Unlock()
+				allconfig.config = renderClusterParams(cmd, clusterName, []string{}, clusterParams, false)
 			}
-			if updateNeeded {
-				f, err := os.Create(outputFile)
-				if err != nil {
-					log.Fatal().Err(err).Msg("")
-				}
-				defer f.Close()
-				_, err = f.WriteString(outStr)
-				if err != nil {
-					log.Fatal().Err(err).Msg("")
-				}
-
-				f.Close()
-			} 
 		}
-		// purge any yaml files in the output dir that were not generated
-		if !spec["disable_output_clean"].Bool() {
-			// clean component dir
-			d, err := os.Open(componentDir)
-			if err != nil {
-				log.Fatal().Err(err).Msg("")
-			}
-			defer d.Close()
-			names, err := d.Readdirnames(-1)
-			if err != nil {
-				log.Fatal().Err(err).Msg("")
-			}
-			for _, name := range names {
-				if _, ok := outputFileMap[name]; ok {
-					// file is managed
-					continue
-				}
-				if filepath.Ext(name) == ".yaml" {
-					delfile := filepath.Join(componentDir, name)
-					err = os.RemoveAll(delfile)
+		vm.ExtCode("kr8_allparams", allconfig.config)
+		allconfig.mu.Unlock()
+	}
+
+	// add kr8_allclusters extcode with every cluster's cluster level params
+	if spec["enable_kr8_allclusters"].Bool() {
+		// combine all the cluster params into a single object indexed by cluster name
+		var allClusterParamsObject string
+		allClusterParamsObject = "{ "
+		for cl, clp := range allClusterParams {
+			allClusterParamsObject = allClusterParamsObject + "'" + cl + "': " + clp + ","
+
+		}
+		allClusterParamsObject = allClusterParamsObject + "}"
+		vm.ExtCode("kr8_allclusters", allClusterParamsObject)
+	}
+
+	// jpath always includes base lib. Add jpaths from spec if set
+	jpath := []string{baseDir + "/lib"}
+	for _, j := range spec["jpaths"].Array() {
+		jpath = append(jpath, baseDir+"/"+compPath+"/"+j.String())
+	}
+	vm.Importer(&jsonnet.FileImporter{
+		JPaths: jpath,
+	})
+
+	// file imports
+	for k, v := range spec["extfiles"].Map() {
+		vpath := baseDir + "/" + compPath + "/" + v.String() // use full path for file
+		extfile, err := ioutil.ReadFile(vpath)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Error importing extfile")
+		}
+		log.Debug().Str("cluster", clusterName).
+			Str("component", componentName).
+			Msg("Extfile: " + k + "=" + v.String())
+		vm.ExtVar(k, string(extfile))
+	}
+
+	componentDir := clusterDir + "/" + componentName
+	// create component dir if needed
+	if _, err := os.Stat(componentDir); os.IsNotExist(err) {
+		err := os.MkdirAll(componentDir, os.ModePerm)
+		if err != nil {
+			log.Fatal().Err(err).Msg("")
+		}
+	}
+
+	outputFileMap := make(map[string]bool)
+	// generate each included file
+	for _, include := range spec["includes"].Array() {
+		var filename string
+		var outputDir string
+		var sfile string
+
+		itype := include.Type.String()
+		outputDir = componentDir
+		if itype == "String" {
+			// include is just a string for the filename
+			filename = include.String()
+		} else if itype == "JSON" {
+			// include is a map with multiple fields
+			inc_spec := include.Map()
+			filename = inc_spec["file"].String()
+			if inc_spec["dest_dir"].Exists() {
+				// handle alternate output directory for file
+				altdir := inc_spec["dest_dir"].String()
+				// dir is always relative to generate dir
+				outputDir = clGenerateDir + "/" + altdir
+				// ensure this directory exists
+				if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+					err = os.MkdirAll(outputDir, os.ModePerm)
 					if err != nil {
 						log.Fatal().Err(err).Msg("")
 					}
-					log.Debug().Str("cluster", clusterName).
-						Str("component", componentName).
-						Msg("Deleted: "+ delfile)
 				}
 			}
-			d.Close()
+			if inc_spec["dest_name"].Exists() {
+				// override destination file name
+				sfile = inc_spec["dest_name"].String()
+			}
 		}
+		file_extension := filepath.Ext(filename)
+		if sfile == "" {
+			if generateShortNames {
+				sbase := filepath.Base(filename)
+				sfile = sbase[0 : len(sbase)-len(file_extension)]
+			} else {
+				// replaces slashes with _ in multi-dir paths and replace extension with yaml
+				sfile = strings.ReplaceAll(filename[0:len(filename)-len(file_extension)], "/", "_")
+			}
+		}
+		outputFile := outputDir + "/" + sfile + ".yaml"
+		// remember output filename for purging files
+		outputFileMap[sfile+".yaml"] = true
+
+		log.Debug().Str("cluster", clusterName).
+			Str("component", componentName).
+			Msg("Process file: " + filename + " -> " + outputFile)
+
+		var input string
+		switch file_extension {
+		case ".jsonnet":
+			// file is processed as an ExtCode input, so that we can postprocess it
+			// in the snippet
+			input = "( import '" + baseDir + "/" + compPath + "/" + filename + "')"
+		case ".yaml":
+			input = "std.native('parseYaml')(importstr '" + baseDir + "/" + compPath + "/" + filename + "')"
+		default:
+			log.Fatal().Str("cluster", clusterName).
+				Str("component", componentName).
+				Str("file", filename).
+				Msg("Unsupported file extension")
+		}
+
+		vm.ExtCode("input", input)
+		j, err := vm.EvaluateAnonymousSnippet(include.String(), "std.extVar('process')(std.extVar('input'))")
+		if err != nil {
+			log.Fatal().Str("cluster", clusterName).
+				Str("component", componentName).
+				Str("file", filename).Err(err).Msg("Error evaluating jsonnet snippet")
+		}
+
+		// create output file contents in a string first, as a yaml stream
+		var o []interface{}
+		var outStr string
+		if err := json.Unmarshal([]byte(j), &o); err != nil {
+			log.Fatal().Err(err).Msg("")
+		}
+		for _, jobj := range o {
+			outStr = outStr + "---\n"
+			buf, err := goyaml.Marshal(jobj)
+			if err != nil {
+				log.Fatal().Err(err).Msg("")
+			}
+			outStr = outStr + string(buf) + "\n"
+		}
+
+		// only write file if it does not exist, or the generated contents does not match what is on disk
+		var updateNeeded bool
+		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+			log.Debug().Str("cluster", clusterName).
+				Str("component", componentName).
+				Msg("Creating " + outputFile)
+			updateNeeded = true
+		} else {
+			currentContents, err := ioutil.ReadFile(outputFile)
+			if err != nil {
+				log.Fatal().Err(err).Msg("Error reading file")
+			}
+			if string(currentContents) != outStr {
+				updateNeeded = true
+				log.Debug().Str("cluster", clusterName).
+					Str("component", componentName).
+					Msg("Updating: " + outputFile)
+			}
+		}
+		if updateNeeded {
+			f, err := os.Create(outputFile)
+			if err != nil {
+				log.Fatal().Err(err).Msg("")
+			}
+			defer f.Close()
+			_, err = f.WriteString(outStr)
+			if err != nil {
+				log.Fatal().Err(err).Msg("")
+			}
+
+			f.Close()
+		}
+	}
+	// purge any yaml files in the output dir that were not generated
+	if !spec["disable_output_clean"].Bool() {
+		// clean component dir
+		d, err := os.Open(componentDir)
+		if err != nil {
+			log.Fatal().Err(err).Msg("")
+		}
+		defer d.Close()
+		names, err := d.Readdirnames(-1)
+		if err != nil {
+			log.Fatal().Err(err).Msg("")
+		}
+		for _, name := range names {
+			if _, ok := outputFileMap[name]; ok {
+				// file is managed
+				continue
+			}
+			if filepath.Ext(name) == ".yaml" {
+				delfile := filepath.Join(componentDir, name)
+				err = os.RemoveAll(delfile)
+				if err != nil {
+					log.Fatal().Err(err).Msg("")
+				}
+				log.Debug().Str("cluster", clusterName).
+					Str("component", componentName).
+					Msg("Deleted: " + delfile)
+			}
+		}
+		d.Close()
 	}
 }
 
@@ -423,14 +448,17 @@ var generateCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal().Err(err).Msg("")
 		}
-		p, _ := ants.NewPool(parallel)
+		log.Debug().Msg("Parallel set to " + strconv.Itoa(parallel))
+
+		ants_cp, _ := ants.NewPool(parallel)
+		ants_cl, _ := ants.NewPool(parallel)
 
 		for _, clusterName := range clusterList {
 			wg.Add(1)
 			cl := clusterName
-			_ = p.Submit(func() {
+			_ = ants_cl.Submit(func() {
 				defer wg.Done()
-				genProcessCluster(cmd, cl)
+				genProcessCluster(cmd, cl, ants_cp)
 			})
 		}
 		wg.Wait()
@@ -444,5 +472,5 @@ func init() {
 	generateCmd.Flags().StringVarP(&components, "components", "", "", "components to generate - comma separated list of component names and/or regular expressions")
 	generateCmd.Flags().StringVarP(&generateDir, "generate-dir", "", "", "output directory")
 	generateCmd.Flags().StringVarP(&clIncludes, "clincludes", "", "", "filter included cluster by matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
-	generateCmd.Flags().IntP("parallel", "", 1, "parallelism")
+	generateCmd.Flags().IntP("parallel", "", runtime.GOMAXPROCS(0), "parallelism - defaults to GOMAXPROCS")
 }
