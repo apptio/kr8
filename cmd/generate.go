@@ -166,7 +166,6 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				// all component params are in config
 				allconfig.config = config
 			} else {
-				defer allconfig.mu.Unlock()
 				allconfig.config = renderClusterParams(cmd, clusterName, []string{}, clusterParams, false)
 			}
 		}
