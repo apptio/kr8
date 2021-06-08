@@ -7,6 +7,7 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
@@ -29,6 +30,7 @@ var (
 	clusters         string
 	generateDir      string
 	clIncludes       string
+	clExcludes       string
 	allClusterParams map[string]string
 )
 
@@ -393,35 +395,69 @@ var generateCmd = &cobra.Command{
 		}
 
 		for c, _ := range allClusterParams {
-			if clIncludes != "" {
+			if clIncludes != "" || clExcludes != "" {
 				gjresult := gjson.Parse(allClusterParams[c])
-				// filter on cluster parameters, passed in gjson path notation with either
-				// "=" for equality or "~" for regex match
-				var include bool
-				for _, b := range strings.Split(clIncludes, ",") {
-					include = false
-					// equality match
-					kv := strings.SplitN(b, "=", 2)
-					if len(kv) == 2 {
-						if gjresult.Get(kv[0]).String() == kv[1] {
-							include = true
-						}
-					} else {
-						// regex match
-						kv := strings.SplitN(b, "~", 2)
+				// includes
+				if clIncludes != "" {
+					// filter on cluster parameters, passed in gjson path notation with either
+					// "=" for equality or "~" for regex match
+					var include bool
+					for _, b := range strings.Split(clIncludes, ",") {
+						include = false
+						// equality match
+						kv := strings.SplitN(b, "=", 2)
 						if len(kv) == 2 {
-							matched, _ := regexp.MatchString(kv[1], gjresult.Get(kv[0]).String())
-							if matched {
+							if gjresult.Get(kv[0]).String() == kv[1] {
 								include = true
 							}
+						} else {
+							// regex match
+							kv := strings.SplitN(b, "~", 2)
+							if len(kv) == 2 {
+								matched, _ := regexp.MatchString(kv[1], gjresult.Get(kv[0]).String())
+								if matched {
+									include = true
+								}
+							}
+						}
+						if !include {
+							break
 						}
 					}
 					if !include {
-						break
+						continue
 					}
 				}
-				if !include {
-					continue
+				// excludes
+				if clExcludes != "" {
+					// filter on cluster parameters, passed in gjson path notation with either
+					// "=" for equality or "~" for regex match
+					var exclude bool
+					for _, b := range strings.Split(clExcludes, ",") {
+						exclude = false
+						// equality match
+						kv := strings.SplitN(b, "=", 2)
+						if len(kv) == 2 {
+							if gjresult.Get(kv[0]).String() == kv[1] {
+								exclude = true
+							}
+						} else {
+							// regex match
+							kv := strings.SplitN(b, "~", 2)
+							if len(kv) == 2 {
+								matched, _ := regexp.MatchString(kv[1], gjresult.Get(kv[0]).String())
+								if matched {
+									exclude = true
+								}
+							}
+						}
+						if exclude {
+							break
+						}
+					}
+					if exclude {
+						continue
+					}
 				}
 			}
 
@@ -470,6 +506,9 @@ func init() {
 	generateCmd.Flags().StringVarP(&clusters, "clusters", "", "", "clusters to generate - comma separated list of cluster names and/or regular expressions ")
 	generateCmd.Flags().StringVarP(&components, "components", "", "", "components to generate - comma separated list of component names and/or regular expressions")
 	generateCmd.Flags().StringVarP(&generateDir, "generate-dir", "", "", "output directory")
-	generateCmd.Flags().StringVarP(&clIncludes, "clincludes", "", "", "filter included cluster by matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
+	generateCmd.Flags().StringVarP(&clIncludes, "clincludes", "", "", "filter included cluster by including clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
+	generateCmd.Flags().StringVarP(&clExcludes, "clexcludes", "", "", "filter included cluster by excluding clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
 	generateCmd.Flags().IntP("parallel", "", runtime.GOMAXPROCS(0), "parallelism - defaults to GOMAXPROCS")
+	viper.BindPFlag("clincludes", generateCmd.PersistentFlags().Lookup("clincludes"))
+	viper.BindPFlag("clexcludes", generateCmd.PersistentFlags().Lookup("clexcludes"))
 }
