@@ -20,7 +20,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
-	github.com/jsonnet-bundler/jsonnet-bundler v0.1.0 // indirect
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.3 // indirect
@@ -35,8 +34,7 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.2.1
-	github.com/tidwall/gjson v1.1.3
-	github.com/tidwall/match v1.0.0 // indirect
+	github.com/tidwall/gjson v1.6.5
 	github.com/ulikunitz/xz v0.0.0-20180703112113-636d36a76670 // indirect
 	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e // indirect
 	golang.org/x/net v0.0.0-20180826012351-8a410e7b638d // indirect
