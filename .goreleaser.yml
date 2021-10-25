@@ -3,14 +3,12 @@ before:
   hooks:
   - go mod download
 builds:
-  -
-    env:
-    - CGO_ENABLED=0
+  - env: [CGO_ENABLED=0]
     goos:
-    - linux
-    - darwin
+      - linux
+      - darwin
     goarch:
-    - amd64
+      - amd64
     main: .
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
     binary: kr8
@@ -28,6 +26,19 @@ archives:
     - changelog*
     - CHANGELOG*
     - scripts/*
+snapshot:
+  name_template: SNAPSHOT-{{ .Commit }}
+dist: dist
+dockers:
+  -
+    image_templates: 
+      - 'ghcr.io/apptio/kr8:{{ .Tag }}'
+      - 'ghcr.io/apptio/kr8:latest'
+    dockerfile: Dockerfile-goreleaser
+    build_flag_templates:
+      - "--label=org.label-schema.schema-version=1.0"
+      - "--label=org.label-schema.version={{.Version}}"
+      - "--label=org.label-schema.name={{.ProjectName}}"
 nfpms:
   -
     vendor: Apptio TechOps
@@ -38,26 +49,12 @@ nfpms:
       - rpm
       - deb
     bindir: /usr/local/bin
-    files:
-      "scripts/kr8-helpers": "/usr/local/bin/kr8-helpers"
-snapshot:
-  name_template: SNAPSHOT-{{ .Commit }}
-dist: dist
-dockers:
-  -
-    image_templates: 
-      - 'apptio/kr8:{{ .Tag }}'
-      - 'apptio/kr8:latest'
-    dockerfile: Dockerfile-goreleaser
-    build_flag_templates:
-      - "--label=org.label-schema.schema-version=1.0"
-      - "--label=org.label-schema.version={{.Version}}"
-      - "--label=org.label-schema.name={{.ProjectName}}"
 brews:
   -
-    github:
-      owner: apptio
-      name: homebrew-tap
+    tap:
+      owner: jess-belliveau
+      name: tap-test
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
 
     commit_author:
       name: release
