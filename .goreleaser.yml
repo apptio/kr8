@@ -12,8 +12,8 @@ builds:
 dockers:
   -
     image_templates: 
-      - 'apptio/kr8:{{ .Tag }}'
-      - 'apptio/kr8:latest'
+      - 'ghcr.io/apptio/kr8:{{ .Tag }}'
+      - 'ghcr.io/apptio/kr8:latest'
     dockerfile: Dockerfile-goreleaser
     build_flag_templates:
       - "--label=org.label-schema.schema-version=1.0"
