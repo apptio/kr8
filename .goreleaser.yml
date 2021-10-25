@@ -31,9 +31,10 @@ nfpms:
     bindir: /usr/local/bin
 brews:
   -
-    github:
-      owner: apptio
-      name: homebrew-tap
+    tap:
+      owner: jess-belliveau
+      name: tap-test
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
 
     commit_author:
       name: release
