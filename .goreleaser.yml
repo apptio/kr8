@@ -1,4 +1,7 @@
 project_name: kr8
+before:
+  hooks:
+  - go mod download
 builds:
   - env: [CGO_ENABLED=0]
     goos:
@@ -9,6 +12,23 @@ builds:
     main: .
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
     binary: kr8
+archives:
+  -
+    format: tar.gz
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    files:
+    - licence*
+    - LICENCE*
+    - license*
+    - LICENSE*
+    - readme*
+    - README*
+    - changelog*
+    - CHANGELOG*
+    - scripts/*
+snapshot:
+  name_template: SNAPSHOT-{{ .Commit }}
+dist: dist
 dockers:
   -
     image_templates: 
