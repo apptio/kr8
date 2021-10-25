@@ -27,16 +27,20 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 var (
-	cfgFile      string
-	baseDir      string
-	clusterDir   string
-	componentDir string
-	debug        bool
-	colorOutput  bool
+	cfgFile       string
+	baseDir       string
+	clusterDir    string
+	componentDir  string
+	clusterParams string
+	cluster       string
+
+	debug       bool
+	colorOutput bool
 )
 
 // exported Version variable
@@ -48,9 +52,6 @@ var RootCmd = &cobra.Command{
 	Short: "Kubernetes config parameter framework",
 	Long: `A tool to generate Kubernetes configuration from a hierarchy
 	of jsonnet files`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
@@ -70,12 +71,13 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&clusterDir, "clusterdir", "D", "", "kr8 cluster directory")
 	RootCmd.PersistentFlags().StringVarP(&componentDir, "componentdir", "X", "", "kr8 component directory")
 	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing")
-	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", false, "enable colorized output")
+	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", true, "enable colorized output (default). Set to false to disable")
 	RootCmd.PersistentFlags().StringArrayP("jpath", "J", nil, "Directories to add to jsonnet include path. Repeat arg for multiple directories")
 	RootCmd.PersistentFlags().StringSlice("ext-str-file", nil, "Set jsonnet extvar from file contents")
 	viper.BindPFlag("base", RootCmd.PersistentFlags().Lookup("base"))
 	viper.BindPFlag("clusterdir", RootCmd.PersistentFlags().Lookup("clusterdir"))
 	viper.BindPFlag("componentdir", RootCmd.PersistentFlags().Lookup("componentdir"))
+	viper.BindPFlag("color", RootCmd.PersistentFlags().Lookup("color"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -85,7 +87,9 @@ func initConfig() {
 	}
 
 	if debug {
-		log.SetLevel(log.DebugLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
 	viper.SetConfigName(".kr8") // name of config file (without extension)
@@ -94,20 +98,23 @@ func initConfig() {
 	viper.SetEnvPrefix("KR8")
 	viper.AutomaticEnv() // read in environment variables that match
 
+	// If a config file is found, read it in.
+	if err := viper.ReadInConfig(); err == nil {
+		log.Debug().Msg("Using config file:" + viper.ConfigFileUsed())
+	}
+	colorOutput = viper.GetBool("color")
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
+
 	baseDir = viper.GetString("base")
-	log.Debug("Using base directory: ", baseDir)
+	log.Debug().Msg("Using base directory: " + baseDir)
 	clusterDir = viper.GetString("clusterdir")
 	if clusterDir == "" {
 		clusterDir = baseDir + "/clusters"
 	}
-	log.Debug("Using cluster directory: ", clusterDir)
+	log.Debug().Msg("Using cluster directory: " + clusterDir)
 	if componentDir == "" {
 		componentDir = baseDir + "/components"
 	}
-	log.Debug("Using component directory: ", componentDir)
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		log.Debug("Using config file:", viper.ConfigFileUsed())
-	}
+	log.Debug().Msg("Using component directory: " + componentDir)
 
 }

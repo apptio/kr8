@@ -22,11 +22,7 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
-)
-
-var (
-	cluster string
+	"github.com/rs/zerolog/log"
 )
 
 // getCmd represents the get command
@@ -45,7 +41,7 @@ var getclustersCmd = &cobra.Command{
 		clusters, err := getClusters(clusterDir)
 
 		if err != nil {
-			log.Fatal("Error getting cluster: ", err)
+			log.Fatal().Err(err).Msg("Error getting cluster")
 		}
 
 		var entry []string
@@ -72,7 +68,7 @@ var getcomponentsCmd = &cobra.Command{
 		clusterName := cluster
 
 		if clusterName == "" {
-			log.Fatal("Please specify a --cluster name")
+			log.Fatal().Msg("Please specify a --cluster name")
 		}
 
 		var params []string
@@ -84,17 +80,17 @@ var getcomponentsCmd = &cobra.Command{
 			params = append(params, clusterParams)
 		}
 
-		j := renderJsonnet(cmd, params, "._components", true, "")
+		j := renderJsonnet(cmd, params, "._components", true, "", "components")
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {
-				log.Fatal("Error getting param: ", paramPath)
+				log.Fatal().Msg("Error getting param: " + paramPath)
 			} else {
-				formatted = Pretty(j, colorOutput)
+				formatted := Pretty(j, colorOutput)
 				fmt.Println(formatted)
 			}
 		} else {
-			formatted = Pretty(j, colorOutput)
+			formatted := Pretty(j, colorOutput)
 			fmt.Println(formatted)
 		}
 	},
@@ -109,23 +105,23 @@ var getparamsCmd = &cobra.Command{
 		clusterName := cluster
 
 		if clusterName == "" {
-			log.Fatal("Please specify a --cluster")
+			log.Fatal().Msg("Please specify a --cluster")
 		}
 
 		fmt.Println(componentName)
 
-		j := renderClusterParams(cmd, clusterName, componentName, clusterParams, true)
+		j := renderClusterParams(cmd, clusterName, []string{componentName}, clusterParams, true)
 
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			notunset, _ := cmd.Flags().GetBool("notunset")
 			if notunset && value.String() == "" {
-				log.Fatal("Error getting param: ", paramPath)
+				log.Fatal().Msg("Error getting param: " + paramPath)
 			} else {
 				fmt.Println(value) // no formatting because this isn't always json, this is just the value of a field
 			}
 		} else {
-			formatted = Pretty(j, colorOutput)
+			formatted := Pretty(j, colorOutput)
 			fmt.Println(formatted)
 		}
 

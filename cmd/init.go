@@ -24,8 +24,9 @@ import (
 	"os"
 
 	"github.com/hashicorp/go-getter"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	//"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -52,22 +53,22 @@ and initialize a git repo so you can get started`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if len(args) < 1 {
-			log.Fatal("Must specify a destination")
+			log.Fatal().Msg("Must specify a destination")
 		}
 
 		if dl_url != "" {
 			real_url = dl_url
 		} else {
-			log.Fatal("Must specify a URL")
+			log.Fatal().Msg("Must specify a URL")
 		}
 		// Get the current working directory
 		pwd, err := os.Getwd()
 		if err != nil {
-			log.Fatal("Error getting working directory:", err)
+			log.Fatal().Err(err).Msg("Error getting working directory")
 		}
 
 		// Download the skeletion directory
-		log.Debug("Downloading skeleton repo from ", real_url)
+		log.Debug().Msg("Downloading skeleton repo from " + real_url)
 		client := &getter.Client{
 			Src:  real_url,
 			Dst:  args[0],
@@ -76,13 +77,13 @@ and initialize a git repo so you can get started`,
 		}
 
 		if err := client.Get(); err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Msg("")
 			os.Exit(1)
 		}
 
 		// Check for .git folder
 		if _, err := os.Stat(args[0] + "/.git"); !os.IsNotExist(err) {
-			log.Debug("Removing .git directory")
+			log.Debug().Msg("Removing .git directory")
 			os.RemoveAll(args[0] + "/.git")
 		}
 	},

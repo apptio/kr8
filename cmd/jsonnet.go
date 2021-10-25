@@ -14,7 +14,8 @@ import (
 	goyaml "github.com/ghodss/yaml"
 	jsonnet "github.com/google/go-jsonnet"
 	jsonnetAst "github.com/google/go-jsonnet/ast"
-	log "github.com/sirupsen/logrus"
+	"github.com/grafana/tanka/pkg/helm"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -74,7 +75,7 @@ func JsonnetVM(cmd *cobra.Command) (*jsonnet.VM, error) {
 	for _, extvar := range extvarfiles {
 		kv := strings.SplitN(extvar, "=", 2)
 		if len(kv) != 2 {
-			log.Panic("Failed to parse %s: missing '=' in %s", "ext-str-file", extvar)
+			log.Fatal().Str("ext-str-file", extvar).Msg("Failed to parse. Missing '=' in parameter`")
 		}
 		v, err := ioutil.ReadFile(kv[1])
 		if err != nil {
@@ -86,7 +87,7 @@ func JsonnetVM(cmd *cobra.Command) (*jsonnet.VM, error) {
 }
 
 // Takes a list of jsonnet files and imports each one and mixes them with "+"
-func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool, prepend string) string {
+func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool, prepend string, source string) string {
 
 	// copy the slice so that we don't unitentionally modify the original
 	jsonnetPaths := make([]string, len(files[:0]))
@@ -100,7 +101,7 @@ func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool,
 	// Create a JSonnet VM
 	vm, err := JsonnetVM(cmd)
 	if err != nil {
-		log.Panic("Error creating jsonnet VM:", err)
+		log.Fatal().Err(err).Msg("Error creating jsonnet VM")
 	}
 
 	// Join the slices into a jsonnet compat string. Prepend code from "prepend" variable, if set.
@@ -121,10 +122,10 @@ func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool,
 	}
 
 	// render the jsonnet
-	out, err := vm.EvaluateSnippet("file", jsonnetImport)
+	out, err := vm.EvaluateAnonymousSnippet(source, jsonnetImport)
 
 	if err != nil {
-		log.Panic("Error evaluating jsonnet snippet: ", err)
+		log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
 	}
 
 	return out
@@ -241,6 +242,9 @@ func RegisterNativeFuncs(vm *jsonnet.VM) {
 			return r.ReplaceAllString(src, repl), nil
 		},
 	})
+
+	vm.NativeFunction(helm.NativeFunc(helm.ExecHelm{}))
+
 }
 
 var jsonnetCmd = &cobra.Command{
@@ -259,10 +263,10 @@ var jsonnetrenderCmd = &cobra.Command{
 		clusterName := viper.GetString("cluster")
 
 		if clusterName == "" && clusterParams == "" {
-			log.Fatal("Please specify a --cluster name and/or --clusterparams")
+			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
 		}
 
-		config := renderClusterParams(cmd, clusterName, componentName, clusterParams, false)
+		config := renderClusterParams(cmd, clusterName, []string{componentName}, clusterParams, false)
 
 		// VM
 		vm, _ := JsonnetVM(cmd)
@@ -280,28 +284,28 @@ var jsonnetrenderCmd = &cobra.Command{
 		} else {
 			input = "( import '" + args[0] + "')"
 		}
-		j, err := vm.EvaluateSnippet("file", input)
+		j, err := vm.EvaluateAnonymousSnippet("file", input)
 
 		if err != nil {
-			log.Panic("Error evaluating jsonnet snippet: ", err)
+			log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
 		}
 		switch outputFormat {
 		case "yaml":
 			yaml, err := goyaml.JSONToYAML([]byte(j))
 			if err != nil {
-				log.Panic("Error converting JSON to YAML: ", err)
+				log.Fatal().Err(err).Msg("Error converting JSON to YAML")
 			}
 			fmt.Println(string(yaml))
 		case "stream": // output yaml stream
 			var o []interface{}
 			if err := json.Unmarshal([]byte(j), &o); err != nil {
-				log.Panic(err)
+				log.Fatal().Err(err).Msg("")
 			}
 			for _, jobj := range o {
 				fmt.Println("---")
 				buf, err := goyaml.Marshal(jobj)
 				if err != nil {
-					log.Panic(err)
+					log.Fatal().Err(err).Msg("")
 				}
 				fmt.Println(string(buf))
 			}
@@ -309,7 +313,7 @@ var jsonnetrenderCmd = &cobra.Command{
 			formatted := Pretty(j, colorOutput)
 			fmt.Println(formatted)
 		default:
-			log.Fatal("Output format must be json, yaml or stream")
+			log.Fatal().Msg("Output format must be json, yaml or stream")
 		}
 	},
 }

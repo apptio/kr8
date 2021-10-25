@@ -24,7 +24,7 @@ import (
 	"bufio"
 	"fmt"
 	gyaml "github.com/ghodss/yaml"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"io"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -50,14 +50,14 @@ var yamlhelmcleanCmd = &cobra.Command{
 			if err == io.EOF {
 				break
 			} else if err != nil {
-				log.Panic("Error decoding decoding yaml stream", err)
+				log.Fatal().Err(err).Msg("Error decoding decoding yaml stream")
 			}
 			if len(bytes) == 0 {
 				continue
 			}
 			jsondata, err := yaml.ToJSON(bytes)
 			if err != nil {
-				log.Panic("Error encoding yaml to JSON", err)
+				log.Fatal().Err(err).Msg("Error encoding yaml to JSON")
 			}
 			if string(jsondata) == "null" {
 				// skip empty json
@@ -65,14 +65,14 @@ var yamlhelmcleanCmd = &cobra.Command{
 			}
 			_, _, err = unstructured.UnstructuredJSONScheme.Decode(jsondata, nil, nil)
 			if err != nil {
-				log.Panic("Error handling unstructured JSON", err)
+				log.Fatal().Err(err).Msg("Error handling unstructured JSON")
 			}
 			jsa = append(jsa, jsondata)
 		}
 		for _, j := range jsa {
 			out, err := gyaml.JSONToYAML(j)
 			if err != nil {
-				log.Panic("Error encoding JSON to YAML", err)
+				log.Fatal().Err(err).Msg("Error encoding JSON to YAML")
 			}
 			fmt.Println("---")
 			fmt.Println(string(out))

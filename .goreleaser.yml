@@ -32,7 +32,6 @@ nfpms:
   -
     vendor: Apptio TechOps
     homepage: "https://github.com/apptio/kr8"
-    maintainer: Lee Briggs <lbriggs@apptio.com>
     description: "Opinionated configuration management tool for Kubernetes Cluster"
     license: MIT
     formats:

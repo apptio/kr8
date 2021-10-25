@@ -1,26 +1,22 @@
 package cmd
 
 import (
-	//"fmt"
-	//"fmt"
-	log "github.com/sirupsen/logrus"
-	//"github.com/olekukonko/tablewriter"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/cobra"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/spf13/cobra"
-	"github.com/tidwall/gjson"
 )
 
-type ComponentDef struct {
+type componentDef struct {
 	Path string `json:"path"`
 }
 
-func (c *Clusters) AddItem(item Cluster) Clusters {
+func (c *Clusters) addItem(item Cluster) Clusters {
 	c.Cluster = append(c.Cluster, item)
 	return *c
 }
@@ -28,8 +24,6 @@ func (c *Clusters) AddItem(item Cluster) Clusters {
 func getClusters(searchDir string) (Clusters, error) {
 
 	fileList := make([]string, 0)
-	//clusterName := make([]string, 0)
-	//pathName := make([]string, 0)
 
 	e := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
 		fileList = append(fileList, path)
@@ -37,7 +31,8 @@ func getClusters(searchDir string) (Clusters, error) {
 	})
 
 	if e != nil {
-		log.Fatal("Error building cluster list: ", e)
+		log.Fatal().Err(e).Msg("Error building cluster list: ")
+
 	}
 
 	ClusterData := []Cluster{}
@@ -51,7 +46,7 @@ func getClusters(searchDir string) (Clusters, error) {
 
 		if fileName == "cluster.jsonnet" {
 			entry := Cluster{Name: splitFile[len(splitFile)-2], Path: strings.Join(splitFile[:len(splitFile)-1], "/")}
-			c.AddItem(entry)
+			c.addItem(entry)
 
 		}
 	}
@@ -75,11 +70,12 @@ func getCluster(searchDir string, clusterName string) string {
 	})
 
 	if e != nil {
-		log.Fatal("Error building cluster list: ", e)
+		log.Fatal().Err(e).Msg("Error building cluster list: ")
+
 	}
 
 	if clusterPath == "" {
-		log.Fatal("Could not find cluster: ", clusterName)
+		log.Fatal().Msg("Could not find cluster: " + clusterName)
 	}
 
 	return clusterPath
@@ -126,13 +122,29 @@ func getClusterParams(basePath string, targetPath string) []string {
 
 }
 
-func renderClusterParams(cmd *cobra.Command, clusterName string, componentName string, clusterParams string, prune bool) string {
+// only render cluster params (_cluster), without components
+func renderClusterParamsOnly(cmd *cobra.Command, clusterName string, clusterParams string, prune bool) string {
+	var params []string
+	if clusterName != "" {
+		clusterPath := getCluster(clusterDir, clusterName)
+		params = getClusterParams(clusterDir, clusterPath)
+	}
+	if clusterParams != "" {
+		params = append(params, clusterParams)
+	}
+	renderedParams := renderJsonnet(cmd, params, "._cluster", prune, "", "clusterparams")
+
+	return renderedParams
+}
+
+// render cluster params, merged with one or more component's parameters. Empty componentName list renders all component parameters
+func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames []string, clusterParams string, prune bool) string {
 	if clusterName == "" && clusterParams == "" {
-		log.Fatal("Please specify a --cluster name and/or --clusterparams")
+		log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
 	}
 
 	var params []string
-	var componentMap map[string]ComponentDef
+	var componentMap map[string]componentDef
 
 	if clusterName != "" {
 		clusterPath := getCluster(clusterDir, clusterName)
@@ -142,28 +154,43 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentName s
 		params = append(params, clusterParams)
 	}
 
-	compParams := renderJsonnet(cmd, params, "", true, "")
+	compParams := renderJsonnet(cmd, params, "", true, "", "clusterparams")
 
 	compString := gjson.Get(compParams, "_components")
 	err := json.Unmarshal([]byte(compString.String()), &componentMap)
 	if err != nil {
-		log.Panic("failed to parse component map:", err)
+		log.Fatal().Err(err).Msg("failed to parse component map")
 	}
 	componentDefaultsMerged := "{"
-	for key, value := range componentMap {
-		if componentName != "" && key != componentName {
-			continue
+	if len(componentNames) > 0 {
+		// we are passed a list of components
+		for _, key := range componentNames {
+			if value, ok := componentMap[key]; ok {
+				path := baseDir + "/" + value.Path + "/params.jsonnet"
+				filec, err := ioutil.ReadFile(path)
+				if err != nil {
+					log.Fatal().Err(err).Msg("Error reading " + path)
+				}
+				componentDefaultsMerged = componentDefaultsMerged + fmt.Sprintf("'%s': %s,", key, string(filec))
+			}
 		}
-		path := baseDir + "/" + value.Path + "/params.jsonnet"
-		filec, err := ioutil.ReadFile(path)
-		if err != nil {
-			log.Panic("Error reading "+path+" :", err)
+	} else {
+		// all components
+		for key, value := range componentMap {
+			if componentName != "" && key != componentName {
+				continue
+			}
+			path := baseDir + "/" + value.Path + "/params.jsonnet"
+			filec, err := ioutil.ReadFile(path)
+			if err != nil {
+				log.Fatal().Err(err).Msg("Error reading " + path)
+			}
+			componentDefaultsMerged = componentDefaultsMerged + fmt.Sprintf("'%s': %s,", key, string(filec))
 		}
-		componentDefaultsMerged = componentDefaultsMerged + fmt.Sprintf("'%s': %s,", key, string(filec))
 	}
 	componentDefaultsMerged = componentDefaultsMerged + "}"
 
-	compParams = renderJsonnet(cmd, params, "", prune, componentDefaultsMerged)
+	compParams = renderJsonnet(cmd, params, "", prune, componentDefaultsMerged, "componentparams")
 
 	return compParams
 }
