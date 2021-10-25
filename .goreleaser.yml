@@ -52,8 +52,8 @@ nfpms:
 brews:
   -
     tap:
-      owner: jess-belliveau
-      name: tap-test
+      owner: apptio
+      name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
 
     commit_author:
