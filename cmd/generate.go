@@ -82,14 +82,31 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 		}
 	}
 
+	// list of current generated components directories
+	d, err := os.Open(clusterDir)
+	if err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
+	defer d.Close()
+	read_all_dirs := -1
+	generatedCompList, err := d.Readdirnames(read_all_dirs)
+	if err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
+
 	// determine list of components to process
 	var compList []string
 	var currentCompList []string
 
 	if components != "" {
 		// only process specified component if it's defined in the cluster
-		for _, b := range strings.Split(components, ",") { //flipped so it could append to currentCompList first
-			currentCompList = append(currentCompList, b)
+		for _, b := range strings.Split(components, ",") {
+			for _, c := range generatedCompList {
+				matched, _ := regexp.MatchString("^"+b+"$", c)
+				if matched {
+					currentCompList = append(currentCompList, c)
+				}
+			}
 			for c, _ := range clusterComponents {
 				matched, _ := regexp.MatchString("^"+b+"$", c)
 				if matched {
@@ -101,22 +118,12 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 		for c, _ := range clusterComponents {
 			compList = append(compList, c)
 		}
-		// list of current generated components directories
-		d, err := os.Open(clusterDir)
-		if err != nil {
-			log.Fatal().Err(err).Msg("")
-		}
-		defer d.Close()
-		read_all_dirs := -1
-		currentCompList, err = d.Readdirnames(read_all_dirs)
-		if err != nil {
-			log.Fatal().Err(err).Msg("")
-		}
+		currentCompList = generatedCompList
 	}
 	sort.Strings(compList) // process components in sorted order
 
 	// Sort out orphaned generated components directories
-	tmpMap := make(map[string]struct{}, len(clusterComponents)) // using temp map was faster and only works when comparing two slices
+	tmpMap := make(map[string]struct{}, len(clusterComponents))
 	for e, _ := range clusterComponents {
 		tmpMap[e] = struct{}{}
 	}
