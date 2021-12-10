@@ -132,6 +132,9 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 		if _, found := tmpMap[e]; !found {
 			delcomp := filepath.Join(clusterDir, e)
 			os.RemoveAll(delcomp)
+			log.Info().Str("cluster", clusterName).
+				Str("component", e).
+				Msg("Deleting generated for component")
 		}
 	}
 
