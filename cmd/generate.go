@@ -2,13 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	goyaml "github.com/ghodss/yaml"
-	jsonnet "github.com/google/go-jsonnet"
-	"github.com/panjf2000/ants/v2"
-	"github.com/rs/zerolog/log"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -18,6 +11,14 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	goyaml "github.com/ghodss/yaml"
+	jsonnet "github.com/google/go-jsonnet"
+	"github.com/panjf2000/ants/v2"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/tidwall/gjson"
 )
 
 type safeString struct {
@@ -81,27 +82,65 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 		}
 	}
 
+	// list of current generated components directories
+	d, err := os.Open(clusterDir)
+	if err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
+	defer d.Close()
+	read_all_dirs := -1
+	generatedCompList, err := d.Readdirnames(read_all_dirs)
+	if err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
+
 	// determine list of components to process
 	var compList []string
+	var currentCompList []string
+
 	if components != "" {
 		// only process specified component if it's defined in the cluster
-		for c, _ := range clusterComponents {
-			for _, b := range strings.Split(components, ",") {
+		for _, b := range strings.Split(components, ",") {
+			for _, c := range generatedCompList {
+				matched, _ := regexp.MatchString("^"+b+"$", c)
+				if matched {
+					currentCompList = append(currentCompList, c)
+				}
+			}
+			for c, _ := range clusterComponents {
 				matched, _ := regexp.MatchString("^"+b+"$", c)
 				if matched {
 					compList = append(compList, c)
 				}
 			}
 		}
-		if len(compList) == 0 {
-			return
-		}
 	} else {
 		for c, _ := range clusterComponents {
 			compList = append(compList, c)
 		}
+		currentCompList = generatedCompList
 	}
 	sort.Strings(compList) // process components in sorted order
+
+	// Sort out orphaned generated components directories
+	tmpMap := make(map[string]struct{}, len(clusterComponents))
+	for e, _ := range clusterComponents {
+		tmpMap[e] = struct{}{}
+	}
+
+	for _, e := range currentCompList {
+		if _, found := tmpMap[e]; !found {
+			delcomp := filepath.Join(clusterDir, e)
+			os.RemoveAll(delcomp)
+			log.Info().Str("cluster", clusterName).
+				Str("component", e).
+				Msg("Deleting generated for component")
+		}
+	}
+
+	if len(compList) == 0 { // this needs to be moved so purging above works first
+		return
+	}
 
 	// render full params for cluster for all selected components
 	config := renderClusterParams(cmd, clusterName, compList, clusterParams, false)
