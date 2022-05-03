@@ -13,7 +13,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/grafana/tanka v0.18.2
-	github.com/hashicorp/go-getter v1.5.9
+	github.com/hashicorp/go-getter v1.5.11
 	github.com/hashicorp/go-version v1.3.0 // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20210113012101-fb4e108d2519
 	github.com/huandu/xstrings v1.3.2 // indirect
