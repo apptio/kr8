@@ -13,7 +13,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/grafana/tanka v0.18.2
-	github.com/hashicorp/go-getter v1.5.9
+	github.com/hashicorp/go-getter v1.6.1
 	github.com/hashicorp/go-version v1.3.0 // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20210113012101-fb4e108d2519
 	github.com/huandu/xstrings v1.3.2 // indirect
@@ -33,7 +33,6 @@ require (
 	github.com/tidwall/gjson v1.9.4
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	golang.org/x/net v0.0.0-20211014222326-fd004c51d1d6 // indirect
-	golang.org/x/sys v0.0.0-20211013075003-97ac67df715c // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20211013025323-ce878158c4d4 // indirect
 	google.golang.org/grpc v1.41.0 // indirect
