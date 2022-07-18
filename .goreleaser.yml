@@ -66,6 +66,6 @@ brews:
       bin.install "kr8"
       bin.install "scripts/kr8-helpers"
     dependencies:
-      - kubernetes-helm
+      - helm
       - jsonnet
       - go-task/tap/go-task
