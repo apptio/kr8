@@ -25,7 +25,6 @@ import (
 	"os"
 
 	"github.com/olekukonko/tablewriter"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
@@ -48,7 +47,7 @@ var listCmd = &cobra.Command{
 		clusters, err := getClusters(clusterDir)
 
 		if err != nil {
-			log.Fatal().Err(err).Msg("Error getting cluster")
+			fatalog(err).Msg("Error getting cluster")
 		}
 
 		var entry []string
@@ -75,7 +74,7 @@ var paramsCmd = &cobra.Command{
 		clusterName := viper.GetString("cluster")
 
 		if clusterName == "" && clusterParams == "" {
-			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
+			fatalog(err).Msg("Please specify a --cluster name and/or --clusterparams")
 		}
 
 		var clist []string
@@ -88,7 +87,7 @@ var paramsCmd = &cobra.Command{
 			value := gjson.Get(j, paramPath)
 			notunset, _ := cmd.Flags().GetBool("notunset")
 			if notunset && value.String() == "" {
-				log.Fatal().Msg("Error getting param: " + paramPath)
+				fatalog(err).Msg("Error getting param: " + paramPath)
 			} else {
 				fmt.Println(value) // no formatting because this isn't always json, this is just the value of a field
 			}
@@ -109,7 +108,7 @@ var componentsCmd = &cobra.Command{
 		clusterName := viper.GetString("cluster")
 
 		if clusterName == "" && clusterParams == "" {
-			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
+			fatalog(err).Msg("Please specify a --cluster name and/or --clusterparams")
 		}
 
 		var params []string
@@ -125,7 +124,7 @@ var componentsCmd = &cobra.Command{
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {
-				log.Fatal().Msg("Error getting param: " + paramPath)
+				fatalog(err).Msg("Error getting param: " + paramPath)
 			} else {
 				formatted := Pretty(j, colorOutput)
 				fmt.Println(formatted)

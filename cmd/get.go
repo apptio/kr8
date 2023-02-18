@@ -21,8 +21,6 @@ import (
 
 	"fmt"
 	"os"
-
-	"github.com/rs/zerolog/log"
 )
 
 // getCmd represents the get command
@@ -41,7 +39,7 @@ var getclustersCmd = &cobra.Command{
 		clusters, err := getClusters(clusterDir)
 
 		if err != nil {
-			log.Fatal().Err(err).Msg("Error getting cluster")
+			fatalog(err).Msg("Error getting cluster")
 		}
 
 		var entry []string
@@ -68,7 +66,7 @@ var getcomponentsCmd = &cobra.Command{
 		clusterName := cluster
 
 		if clusterName == "" {
-			log.Fatal().Msg("Please specify a --cluster name")
+			fatalog(err).Msg("Please specify a --cluster name")
 		}
 
 		var params []string
@@ -84,7 +82,7 @@ var getcomponentsCmd = &cobra.Command{
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {
-				log.Fatal().Msg("Error getting param: " + paramPath)
+				fatalog(err).Msg("Error getting param: " + paramPath)
 			} else {
 				formatted := Pretty(j, colorOutput)
 				fmt.Println(formatted)
@@ -105,7 +103,7 @@ var getparamsCmd = &cobra.Command{
 		clusterName := cluster
 
 		if clusterName == "" {
-			log.Fatal().Msg("Please specify a --cluster")
+			fatalog(err).Msg("Please specify a --cluster")
 		}
 
 		fmt.Println(componentName)
@@ -116,7 +114,7 @@ var getparamsCmd = &cobra.Command{
 			value := gjson.Get(j, paramPath)
 			notunset, _ := cmd.Flags().GetBool("notunset")
 			if notunset && value.String() == "" {
-				log.Fatal().Msg("Error getting param: " + paramPath)
+				fatalog(err).Msg("Error getting param: " + paramPath)
 			} else {
 				fmt.Println(value) // no formatting because this isn't always json, this is just the value of a field
 			}

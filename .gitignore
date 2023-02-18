@@ -1,5 +1,8 @@
 vendor/
 dist/
+.idea/
+tmp/
 bin
 *.tar.gz
+kr8
 

@@ -15,7 +15,6 @@ import (
 	jsonnet "github.com/google/go-jsonnet"
 	jsonnetAst "github.com/google/go-jsonnet/ast"
 	"github.com/grafana/tanka/pkg/helm"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -75,7 +74,7 @@ func JsonnetVM(cmd *cobra.Command) (*jsonnet.VM, error) {
 	for _, extvar := range extvarfiles {
 		kv := strings.SplitN(extvar, "=", 2)
 		if len(kv) != 2 {
-			log.Fatal().Str("ext-str-file", extvar).Msg("Failed to parse. Missing '=' in parameter`")
+			fatalog(err).Str("ext-str-file", extvar).Msg("Failed to parse. Missing '=' in parameter`")
 		}
 		v, err := ioutil.ReadFile(kv[1])
 		if err != nil {
@@ -101,7 +100,7 @@ func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool,
 	// Create a JSonnet VM
 	vm, err := JsonnetVM(cmd)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error creating jsonnet VM")
+		fatalog(err).Msg("Error creating jsonnet VM")
 	}
 
 	// Join the slices into a jsonnet compat string. Prepend code from "prepend" variable, if set.
@@ -125,7 +124,7 @@ func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool,
 	out, err := vm.EvaluateAnonymousSnippet(source, jsonnetImport)
 
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
+		fatalog(err).Msg("Error evaluating jsonnet snippet")
 	}
 
 	return out
@@ -263,7 +262,7 @@ var jsonnetrenderCmd = &cobra.Command{
 		clusterName := viper.GetString("cluster")
 
 		if clusterName == "" && clusterParams == "" {
-			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
+			fatalog(err).Msg("Please specify a --cluster name and/or --clusterparams")
 		}
 
 		config := renderClusterParams(cmd, clusterName, []string{componentName}, clusterParams, false)
@@ -287,25 +286,25 @@ var jsonnetrenderCmd = &cobra.Command{
 		j, err := vm.EvaluateAnonymousSnippet("file", input)
 
 		if err != nil {
-			log.Fatal().Err(err).Msg("Error evaluating jsonnet snippet")
+			fatalog(err).Msg("Error evaluating jsonnet snippet")
 		}
 		switch outputFormat {
 		case "yaml":
 			yaml, err := goyaml.JSONToYAML([]byte(j))
 			if err != nil {
-				log.Fatal().Err(err).Msg("Error converting JSON to YAML")
+				fatalog(err).Msg("Error converting JSON to YAML")
 			}
 			fmt.Println(string(yaml))
 		case "stream": // output yaml stream
 			var o []interface{}
 			if err := json.Unmarshal([]byte(j), &o); err != nil {
-				log.Fatal().Err(err).Msg("")
+				fatalog(err).Msg("")
 			}
 			for _, jobj := range o {
 				fmt.Println("---")
 				buf, err := goyaml.Marshal(jobj)
 				if err != nil {
-					log.Fatal().Err(err).Msg("")
+					fatalog(err).Msg("")
 				}
 				fmt.Println(string(buf))
 			}
@@ -313,7 +312,7 @@ var jsonnetrenderCmd = &cobra.Command{
 			formatted := Pretty(j, colorOutput)
 			fmt.Println(formatted)
 		default:
-			log.Fatal().Msg("Output format must be json, yaml or stream")
+			fatalog(err).Msg("Output format must be json, yaml or stream")
 		}
 	},
 }
