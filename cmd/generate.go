@@ -49,8 +49,9 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 	if generateDir == "" {
 		clGenerateDir = kr8Spec.Get("generate_dir").String()
 		if clGenerateDir == "" {
-			fatalog(err).Msg("_kr8_spec.generate_dir must be set in parameters or passed as generate-dir flag")
-		}
+            fatalog(err).Str("cluster", clusterName).
+                Msg("_kr8_spec.generate_dir must be set in parameters or passed as generate-dir flag")
+        }
 	} else {
 		clGenerateDir = generateDir
 	}
@@ -70,27 +71,27 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 	if _, err := os.Stat(clGenerateDir); os.IsNotExist(err) {
 		err = os.MkdirAll(clGenerateDir, os.ModePerm)
 		if err != nil {
-			fatalog(err).Msg("")
+            fatalog(err).Str("cluster", clusterName).Msg("")
 		}
 	}
 	// create cluster dir
 	if _, err := os.Stat(clusterDir); os.IsNotExist(err) {
 		err = os.MkdirAll(clusterDir, os.ModePerm)
 		if err != nil {
-			fatalog(err).Msg("")
+            fatalog(err).Str("cluster", clusterName).Msg("")
 		}
 	}
 
 	// list of current generated components directories
 	d, err := os.Open(clusterDir)
 	if err != nil {
-		fatalog(err).Msg("")
+        fatalog(err).Str("cluster", clusterName).Msg("")
 	}
 	defer d.Close()
 	read_all_dirs := -1
 	generatedCompList, err := d.Readdirnames(read_all_dirs)
 	if err != nil {
-		fatalog(err).Msg("")
+        fatalog(err).Str("cluster", clusterName).Msg("")
 	}
 
 	// determine list of components to process
@@ -253,7 +254,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 	if _, err := os.Stat(componentDir); os.IsNotExist(err) {
 		err := os.MkdirAll(componentDir, os.ModePerm)
 		if err != nil {
-			fatalog(err).Msg("")
+            fatalog(err).Str("cluster", clusterName).Msg("")
 		}
 	}
 
@@ -282,7 +283,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 					err = os.MkdirAll(outputDir, os.ModePerm)
 					if err != nil {
-						fatalog(err).Msg("")
+                        fatalog(err).Str("cluster", clusterName).Msg("")
 					}
 				}
 			}
@@ -336,13 +337,13 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 		var o []interface{}
 		var outStr string
 		if err := json.Unmarshal([]byte(j), &o); err != nil {
-			fatalog(err).Msg("")
+            fatalog(err).Str("cluster", clusterName).Msg("")
 		}
 		for _, jobj := range o {
 			outStr = outStr + "---\n"
 			buf, err := goyaml.Marshal(jobj)
 			if err != nil {
-				fatalog(err).Msg("")
+                fatalog(err).Str("cluster", clusterName).Msg("")
 			}
 			outStr = outStr + string(buf) + "\n"
 		}
@@ -369,12 +370,12 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 		if updateNeeded {
 			f, err := os.Create(outputFile)
 			if err != nil {
-				fatalog(err).Msg("")
+                fatalog(err).Str("cluster", clusterName).Msg("")
 			}
 			defer f.Close()
 			_, err = f.WriteString(outStr)
 			if err != nil {
-				fatalog(err).Msg("")
+                fatalog(err).Str("cluster", clusterName).Msg("")
 			}
 
 			f.Close()
@@ -385,12 +386,12 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 		// clean component dir
 		d, err := os.Open(componentDir)
 		if err != nil {
-			fatalog(err).Msg("")
+            fatalog(err).Str("cluster", clusterName).Msg("")
 		}
 		defer d.Close()
 		names, err := d.Readdirnames(-1)
 		if err != nil {
-			fatalog(err).Msg("")
+            fatalog(err).Str("cluster", clusterName).Msg("")
 		}
 		for _, name := range names {
 			if _, ok := outputFileMap[name]; ok {
@@ -401,7 +402,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				delfile := filepath.Join(componentDir, name)
 				err = os.RemoveAll(delfile)
 				if err != nil {
-					fatalog(err).Msg("")
+                    fatalog(err).Str("cluster", clusterName).Msg("")
 				}
 				debuglog(err).Str("cluster", clusterName).
 					Str("component", componentName).
@@ -519,7 +520,7 @@ var generateCmd = &cobra.Command{
 		var wg sync.WaitGroup
 		parallel, err := cmd.Flags().GetInt("parallel")
 		if err != nil {
-			fatalog(err).Msg("")
+            fatalog(err).Str("command", "generate").Msg("")
 		}
 		debuglog(err).Msg("Parallel set to " + strconv.Itoa(parallel))
 
