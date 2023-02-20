@@ -20,10 +20,12 @@
 
 package main
 
-import "github.com/apptio/kr8/cmd"
+import (
+    "github.com/apptio/kr8/cmd"
+)
 
 var version = "snapshot"
 
 func main() {
-	cmd.Execute(version)
+    cmd.Execute(version)
 }

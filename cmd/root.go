@@ -46,6 +46,8 @@ var (
     long        bool
     warn        bool
     err         error = nil
+
+    exit int = 0
 )
 
 // exported Version variable
@@ -66,6 +68,10 @@ func Execute(version string) {
     if err := RootCmd.Execute(); err != nil {
         fmt.Println(err)
         os.Exit(-1)
+    }
+    if noexit {
+        // Pass any exit codes declared during processing when `noexit` is enabled
+        os.Exit(exit)
     }
 }
 

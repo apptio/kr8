@@ -27,9 +27,8 @@ Usage examples
 
 	fatalog(err).Msg("Error evaluating jsonnet snippet")
 
-	fatalog(nil).Msg("Who will think of the children?!")
+	paniclog(nil).Msg("Who will think of the children?!")
 
-	//TODO: Ensure exit code is ultimately tied to the severity (or something) of the worst event
 	//TODO: Summary report at end of run (requires some tracking facility, a run manifest)
 	//TODO: Ability to dump full cluster parameters or other capabilities
 	//TODO: Not logging, but some validation. Should that be in kr8?
@@ -81,6 +80,7 @@ func warnlog(err error) *zerolog.Event {
 }
 
 func errorlog(err error) *zerolog.Event {
+    updateExitCode(1)
     return log.Logger.Error().Err(err)
 }
 
@@ -91,6 +91,7 @@ func fatalog(err error) *zerolog.Event {
         }
     }
     if noexit {
+        updateExitCode(2)
         return log.WithLevel(zerolog.FatalLevel).Err(err)
     }
     return log.Fatal().Err(err) // If no conditions are met, push Fatal() event and exit the program
@@ -98,7 +99,14 @@ func fatalog(err error) *zerolog.Event {
 
 func paniclog(err error) *zerolog.Event {
     if noexit {
+        updateExitCode(3)
         return log.Logger.WithLevel(zerolog.PanicLevel)
     }
     return log.Logger.Panic().Err(err) // If no conditions are met, push Panic() event and exit the program
+}
+
+func updateExitCode(exitcode int) {
+    if exitcode > exit {
+        exit = exitcode
+    }
 }
