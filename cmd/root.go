@@ -21,6 +21,7 @@
 package cmd
 
 import (
+    "bytes"
     "fmt"
     "os"
     "strconv"
@@ -110,8 +111,21 @@ func initConfig() {
     if err := viper.ReadInConfig(); err == nil {
         infolog(err).Msg("Using config file:" + viper.ConfigFileUsed())
     }
+
     colorOutput = viper.GetBool("color")
-    log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
+    if long {
+        // Human-friendly multi-line messages when `--long` is set
+        log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput,
+            FormatExtra: func(evt map[string]interface{}, buf *bytes.Buffer) error {
+                if errstring, ok := evt["error"]; ok {
+                    buf.WriteString("\n" + fmt.Sprint(errstring))
+                }
+                return nil
+            },
+        })
+    } else {
+        log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
+    }
 
     if debug {
         zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -138,5 +152,4 @@ func initConfig() {
     debuglog(err).Msg("No Exit when Fatal Event occurs: " + strconv.FormatBool(noexit))
 
     debuglog(nil).Msg("Long pretty errors and messages: " + strconv.FormatBool(long))
-
 }

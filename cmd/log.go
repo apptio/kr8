@@ -37,7 +37,7 @@ Usage examples
 */
 
 import (
-    "fmt"
+    //"fmt"
     "github.com/rs/zerolog"
     "github.com/rs/zerolog/log"
 )
@@ -85,11 +85,7 @@ func errorlog(err error) *zerolog.Event {
 }
 
 func fatalog(err error) *zerolog.Event {
-    if long {
-        if err != nil {
-            fmt.Println(string(longcolor), err, string(longnocolor))
-        }
-    }
+
     if noexit {
         updateExitCode(2)
         return log.WithLevel(zerolog.FatalLevel).Err(err)

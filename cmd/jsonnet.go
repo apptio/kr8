@@ -124,7 +124,7 @@ func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool,
     out, err := vm.EvaluateAnonymousSnippet(source, jsonnetImport)
 
     if err != nil {
-        fatalog(err).Str("cluster:", cluster).Msg("Error evaluating jsonnet snippet")
+        fatalog(err).Str("source:", "EvaluateAnonymousSnippet").Msg("Error evaluating jsonnet snippet")
 
     }
 
