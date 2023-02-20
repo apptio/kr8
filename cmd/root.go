@@ -118,7 +118,7 @@ func initConfig() {
         log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput,
             FormatExtra: func(evt map[string]interface{}, buf *bytes.Buffer) error {
                 if errstring, ok := evt["error"]; ok {
-                    buf.WriteString("\n" + fmt.Sprint(errstring))
+                    buf.WriteString("\n" + fmt.Sprint(longcolor, errstring, longnocolor))
                 }
                 return nil
             },
