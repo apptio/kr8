@@ -29,6 +29,11 @@ Usage examples
 
 	fatalog(nil).Msg("Who will think of the children?!")
 
+	//TODO: Ensure exit code is ultimately tied to the severity (or something) of the worst event
+	//TODO: Configurability of `zerolog.SetGlobalLevel`
+	//TODO: Summary report at end of run (requires some tracking facility, a run manifest)
+	//TODO: Ability to dump full cluster parameters or other capabilities
+	//TODO: Not logging, but some validation. Should that be in kr8?
 
 */
 
