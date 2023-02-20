@@ -30,52 +30,75 @@ Usage examples
 	fatalog(nil).Msg("Who will think of the children?!")
 
 	//TODO: Ensure exit code is ultimately tied to the severity (or something) of the worst event
-	//TODO: Configurability of `zerolog.SetGlobalLevel`
 	//TODO: Summary report at end of run (requires some tracking facility, a run manifest)
 	//TODO: Ability to dump full cluster parameters or other capabilities
 	//TODO: Not logging, but some validation. Should that be in kr8?
+	//TODO: Environment Variable and config file examples?
 
 */
 
 import (
-	"fmt"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+    "fmt"
+    "github.com/rs/zerolog"
+    "github.com/rs/zerolog/log"
 )
 
+var longcolor string = "\033[1m\033[33m" /* Bold Yellow */
+var longnocolor string = "\033[0m"       // color reset
+
+// RESET   "\033[0m"
+// BLACK   "\033[30m"      /* Black */
+// RED     "\033[31m"      /* Red */
+// GREEN   "\033[32m"      /* Green */
+// YELLOW  "\033[33m"      /* Yellow */
+// BLUE    "\033[34m"      /* Blue */
+// MAGENTA "\033[35m"      /* Magenta */
+// CYAN    "\033[36m"      /* Cyan */
+// WHITE   "\033[37m"      /* White */
+// BOLDBLACK   "\033[1m\033[30m"      /* Bold Black */
+// BOLDRED     "\033[1m\033[31m"      /* Bold Red */
+// BOLDGREEN   "\033[1m\033[32m"      /* Bold Green */
+// BOLDYELLOW  "\033[1m\033[33m"      /* Bold Yellow */
+// BOLDBLUE    "\033[1m\033[34m"      /* Bold Blue */
+// BOLDMAGENTA "\033[1m\033[35m"      /* Bold Magenta */
+// BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
+// BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
+
+func tracelog(err error) *zerolog.Event {
+    return log.Logger.Trace().Err(err)
+}
+
 func debuglog(err error) *zerolog.Event {
-	return log.Logger.Debug().Err(err)
+    return log.Logger.Debug().Err(err)
 }
 
 func infolog(err error) *zerolog.Event {
-	return log.Logger.Info().Err(err)
+    return log.Logger.Info().Err(err)
 }
 
 func warnlog(err error) *zerolog.Event {
-	return log.Logger.Warn().Err(err)
+    return log.Logger.Warn().Err(err)
 }
 
 func errorlog(err error) *zerolog.Event {
-	return log.Logger.Error().Err(err)
+    return log.Logger.Error().Err(err)
 }
 
 func fatalog(err error) *zerolog.Event {
-	if long {
-		if err != nil {
-			color := "\033[33m"
-			nocolor := "\033[0m"
-			fmt.Println(string(color), err, string(nocolor))
-		}
-	}
-	if noexit {
-		return log.WithLevel(zerolog.FatalLevel).Err(err)
-	}
-	return log.Fatal().Err(err) // If no conditions are met, push Fatal() event and exit the program
+    if long {
+        if err != nil {
+            fmt.Println(string(longcolor), err, string(longnocolor))
+        }
+    }
+    if noexit {
+        return log.WithLevel(zerolog.FatalLevel).Err(err)
+    }
+    return log.Fatal().Err(err) // If no conditions are met, push Fatal() event and exit the program
 }
 
 func paniclog(err error) *zerolog.Event {
-	if noexit {
-		return log.Logger.WithLevel(zerolog.PanicLevel)
-	}
-	return log.Logger.Panic().Err(err) // If no conditions are met, push Panic() event and exit the program
+    if noexit {
+        return log.Logger.WithLevel(zerolog.PanicLevel)
+    }
+    return log.Logger.Panic().Err(err) // If no conditions are met, push Panic() event and exit the program
 }
