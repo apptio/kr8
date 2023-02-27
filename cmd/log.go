@@ -37,9 +37,8 @@ Usage examples
 */
 
 import (
-    //"fmt"
-    "github.com/rs/zerolog"
-    "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 var longcolor string = "\033[1m\033[33m" /* Bold Yellow */
@@ -64,45 +63,46 @@ var longnocolor string = "\033[0m"       // color reset
 // BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
 func tracelog(err error) *zerolog.Event {
-    return log.Logger.Trace().Err(err)
+	return log.Logger.Trace().Err(err)
 }
 
 func debuglog(err error) *zerolog.Event {
-    return log.Logger.Debug().Err(err)
+	return log.Logger.Debug().Err(err)
 }
 
 func infolog(err error) *zerolog.Event {
-    return log.Logger.Info().Err(err)
+	return log.Logger.Info().Err(err)
 }
 
 func warnlog(err error) *zerolog.Event {
-    return log.Logger.Warn().Err(err)
+	return log.Logger.Warn().Err(err)
 }
 
 func errorlog(err error) *zerolog.Event {
-    updateExitCode(1)
-    return log.Logger.Error().Err(err)
+	updateExitCode(1)
+	return log.Logger.Error().Err(err)
 }
 
 func fatalog(err error) *zerolog.Event {
+	updateExitCode(2)
 
-    if noexit {
-        updateExitCode(2)
-        return log.WithLevel(zerolog.FatalLevel).Err(err)
-    }
-    return log.Fatal().Err(err) // If no conditions are met, push Fatal() event and exit the program
+	if noexit {
+		return log.WithLevel(zerolog.FatalLevel).Err(err)
+	}
+	return log.Fatal().Err(err) // If no conditions are met, push Fatal() event and exit the program
 }
 
 func paniclog(err error) *zerolog.Event {
-    if noexit {
-        updateExitCode(3)
-        return log.Logger.WithLevel(zerolog.PanicLevel)
-    }
-    return log.Logger.Panic().Err(err) // If no conditions are met, push Panic() event and exit the program
+	updateExitCode(3)
+
+	if noexit {
+		return log.Logger.WithLevel(zerolog.PanicLevel)
+	}
+	return log.Logger.Panic().Err(err) // If no conditions are met, push Panic() event and exit the program
 }
 
-func updateExitCode(exitcode int) {
-    if exitcode > exit {
-        exit = exitcode
-    }
+func updateExitCode(code int) {
+	if code > ExitCode {
+		ExitCode = code
+	}
 }
