@@ -45,7 +45,7 @@ var (
 	colorOutput bool
 	noexit      bool
 	long        bool
-	warn        bool
+	quiet       bool
 	err         error = nil
 
 	ExitCode int = 0
@@ -83,7 +83,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&clusterDir, "clusterdir", "D", "", "kr8 cluster directory")
 	RootCmd.PersistentFlags().StringVarP(&componentDir, "componentdir", "X", "", "kr8 component directory")
 	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing")
-	RootCmd.PersistentFlags().BoolVar(&warn, "warn", false, "log less information about what kr8 is doing")
+	RootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "log less information about what kr8 is doing")
 	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", true, "enable colorized output (default). Set to false to disable")
 	RootCmd.PersistentFlags().BoolVar(&noexit, "noexit", false, "No exit when encountering a fatal error")
 	RootCmd.PersistentFlags().BoolVar(&long, "long", false, "long-form error messages")
@@ -130,8 +130,8 @@ func initConfig() {
 	if debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	} else {
-		if warn {
-			infolog(nil).Msg("Info level and lower logs will be suppressed. Using '--debug' overrides '--warn'")
+		if quiet {
+			infolog(nil).Msg("Info level and lower logs will be suppressed. Using '--debug' overrides '--quiet'")
 			zerolog.SetGlobalLevel(zerolog.WarnLevel)
 		} else {
 			zerolog.SetGlobalLevel(zerolog.InfoLevel)
