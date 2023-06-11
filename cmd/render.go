@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -43,14 +42,14 @@ var helmcleanCmd = &cobra.Command{
 			if err == io.EOF {
 				break
 			} else if err != nil {
-				log.Fatal().Err(err).Msg("Error decoding decoding yaml stream")
+				fatalog(err).Msg("Error decoding decoding yaml stream")
 			}
 			if len(bytes) == 0 {
 				continue
 			}
 			jsondata, err := yaml.ToJSON(bytes)
 			if err != nil {
-				log.Fatal().Err(err).Msg("Error encoding yaml to JSON")
+				fatalog(err).Msg("Error encoding yaml to JSON")
 			}
 			if string(jsondata) == "null" {
 				// skip empty json
@@ -58,14 +57,14 @@ var helmcleanCmd = &cobra.Command{
 			}
 			_, _, err = unstructured.UnstructuredJSONScheme.Decode(jsondata, nil, nil)
 			if err != nil {
-				log.Fatal().Err(err).Msg("Error handling unstructured JSON")
+				fatalog(err).Msg("Error handling unstructured JSON")
 			}
 			jsa = append(jsa, jsondata)
 		}
 		for _, j := range jsa {
 			out, err := goyaml.JSONToYAML(j)
 			if err != nil {
-				log.Fatal().Err(err).Msg("Error encoding JSON to YAML")
+				fatalog(err).Msg("Error encoding JSON to YAML")
 			}
 			fmt.Println("---")
 			fmt.Println(string(out))

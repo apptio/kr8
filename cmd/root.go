@@ -21,8 +21,10 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -41,6 +43,12 @@ var (
 
 	debug       bool
 	colorOutput bool
+	noexit      bool
+	long        bool
+	quiet       bool
+	err         error = nil
+
+	ExitCode int = 0
 )
 
 // exported Version variable
@@ -62,6 +70,10 @@ func Execute(version string) {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
+	if noexit {
+		// Pass any exit codes declared during processing when `noexit` is enabled
+		os.Exit(ExitCode)
+	}
 }
 
 func init() {
@@ -71,7 +83,10 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&clusterDir, "clusterdir", "D", "", "kr8 cluster directory")
 	RootCmd.PersistentFlags().StringVarP(&componentDir, "componentdir", "X", "", "kr8 component directory")
 	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing")
+	RootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "log less information about what kr8 is doing")
 	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", true, "enable colorized output (default). Set to false to disable")
+	RootCmd.PersistentFlags().BoolVar(&noexit, "noexit", false, "No exit when encountering a fatal error")
+	RootCmd.PersistentFlags().BoolVar(&long, "long", false, "long-form error messages")
 	RootCmd.PersistentFlags().StringArrayP("jpath", "J", nil, "Directories to add to jsonnet include path. Repeat arg for multiple directories")
 	RootCmd.PersistentFlags().StringSlice("ext-str-file", nil, "Set jsonnet extvar from file contents")
 	viper.BindPFlag("base", RootCmd.PersistentFlags().Lookup("base"))
@@ -86,12 +101,6 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	}
 
-	if debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	} else {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	}
-
 	viper.SetConfigName(".kr8") // name of config file (without extension)
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("$HOME") // adding home directory as first search path
@@ -100,21 +109,47 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		log.Debug().Msg("Using config file:" + viper.ConfigFileUsed())
+		infolog(err).Msg("Using config file:" + viper.ConfigFileUsed())
 	}
-	colorOutput = viper.GetBool("color")
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
 
+	colorOutput = viper.GetBool("color")
+	if long {
+		// Human-friendly multi-line messages when `--long` is set
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput,
+			FormatExtra: func(evt map[string]interface{}, buf *bytes.Buffer) error {
+				if errstring, ok := evt["error"]; ok {
+					buf.WriteString("\n" + fmt.Sprint(longcolor, errstring, longnocolor))
+				}
+				return nil
+			},
+		})
+	} else {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
+	}
+
+	if debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		if quiet {
+			infolog(nil).Msg("Info level and lower logs will be suppressed. Using '--debug' overrides '--quiet'")
+			zerolog.SetGlobalLevel(zerolog.WarnLevel)
+		} else {
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		}
+	}
 	baseDir = viper.GetString("base")
-	log.Debug().Msg("Using base directory: " + baseDir)
+	debuglog(err).Msg("Using base directory: " + baseDir)
 	clusterDir = viper.GetString("clusterdir")
 	if clusterDir == "" {
 		clusterDir = baseDir + "/clusters"
 	}
-	log.Debug().Msg("Using cluster directory: " + clusterDir)
+	debuglog(err).Msg("Using cluster directory: " + clusterDir)
 	if componentDir == "" {
 		componentDir = baseDir + "/components"
 	}
-	log.Debug().Msg("Using component directory: " + componentDir)
+	debuglog(err).Msg("Using component directory: " + componentDir)
 
+	debuglog(err).Msg("No Exit when Fatal Event occurs: " + strconv.FormatBool(noexit))
+
+	debuglog(nil).Msg("Long pretty errors and messages: " + strconv.FormatBool(long))
 }

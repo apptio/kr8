@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -31,7 +30,7 @@ func getClusters(searchDir string) (Clusters, error) {
 	})
 
 	if e != nil {
-		log.Fatal().Err(e).Msg("Error building cluster list: ")
+		fatalog(e).Msg("Error building cluster list: ")
 
 	}
 
@@ -70,12 +69,12 @@ func getCluster(searchDir string, clusterName string) string {
 	})
 
 	if e != nil {
-		log.Fatal().Err(e).Msg("Error building cluster list: ")
+		fatalog(e).Msg("Error building cluster list: ")
 
 	}
 
 	if clusterPath == "" {
-		log.Fatal().Msg("Could not find cluster: " + clusterName)
+		fatalog(err).Msg("Could not find cluster: " + clusterName)
 	}
 
 	return clusterPath
@@ -140,7 +139,7 @@ func renderClusterParamsOnly(cmd *cobra.Command, clusterName string, clusterPara
 // render cluster params, merged with one or more component's parameters. Empty componentName list renders all component parameters
 func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames []string, clusterParams string, prune bool) string {
 	if clusterName == "" && clusterParams == "" {
-		log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
+		fatalog(err).Msg("Please specify a --cluster name and/or --clusterparams")
 	}
 
 	var params []string
@@ -159,7 +158,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 	compString := gjson.Get(compParams, "_components")
 	err := json.Unmarshal([]byte(compString.String()), &componentMap)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to parse component map")
+		fatalog(err).Msg("failed to parse component map")
 	}
 	componentDefaultsMerged := "{"
 	if len(componentNames) > 0 {
@@ -169,7 +168,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 				path := baseDir + "/" + value.Path + "/params.jsonnet"
 				filec, err := ioutil.ReadFile(path)
 				if err != nil {
-					log.Fatal().Err(err).Msg("Error reading " + path)
+					fatalog(err).Msg("Error reading " + path)
 				}
 				componentDefaultsMerged = componentDefaultsMerged + fmt.Sprintf("'%s': %s,", key, string(filec))
 			}
@@ -183,7 +182,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 			path := baseDir + "/" + value.Path + "/params.jsonnet"
 			filec, err := ioutil.ReadFile(path)
 			if err != nil {
-				log.Fatal().Err(err).Msg("Error reading " + path)
+				fatalog(err).Msg("Error reading " + path)
 			}
 			componentDefaultsMerged = componentDefaultsMerged + fmt.Sprintf("'%s': %s,", key, string(filec))
 		}
