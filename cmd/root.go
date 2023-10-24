@@ -38,6 +38,7 @@ var (
 	componentDir  string
 	clusterParams string
 	cluster       string
+	logLevel      string
 
 	debug       bool
 	colorOutput bool
@@ -70,7 +71,8 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&baseDir, "base", "d", ".", "kr8 config base directory")
 	RootCmd.PersistentFlags().StringVarP(&clusterDir, "clusterdir", "D", "", "kr8 cluster directory")
 	RootCmd.PersistentFlags().StringVarP(&componentDir, "componentdir", "X", "", "kr8 component directory")
-	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing")
+	RootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "L", "info", "set log level")
+	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing. Overrides --loglevel")
 	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", true, "enable colorized output (default). Set to false to disable")
 	RootCmd.PersistentFlags().StringArrayP("jpath", "J", nil, "Directories to add to jsonnet include path. Repeat arg for multiple directories")
 	RootCmd.PersistentFlags().StringSlice("ext-str-file", nil, "Set jsonnet extvar from file contents")
@@ -89,7 +91,22 @@ func initConfig() {
 	if debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	} else {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		switch logLevel {
+		case "debug":
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		case "info":
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		case "warn":
+			zerolog.SetGlobalLevel(zerolog.WarnLevel)
+		case "error":
+			zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+		case "fatal":
+			zerolog.SetGlobalLevel(zerolog.FatalLevel)
+		case "panic":
+			zerolog.SetGlobalLevel(zerolog.PanicLevel)
+		default:
+			log.Fatal().Msg("invalid log level: " + logLevel)
+		}
 	}
 
 	viper.SetConfigName(".kr8") // name of config file (without extension)
