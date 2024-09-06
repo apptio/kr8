@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -33,6 +32,7 @@ var (
 	clIncludes       string
 	clExcludes       string
 	allClusterParams map[string]string
+	genConfig        bool
 )
 
 func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
@@ -144,7 +144,11 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 
 	// render full params for cluster for all selected components
 	config := renderClusterParams(cmd, clusterName, compList, clusterParams, false)
-
+	if genConfig == true {
+		filename := clusterName + "-config.json"
+		os.WriteFile(clGenerateDir+"/"+clusterName+"/"+filename, []byte(config), 0644)
+		return // skip processing components if we're just generating the config
+	}
 	var allconfig safeString
 
 	var wg sync.WaitGroup
@@ -239,7 +243,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 	// file imports
 	for k, v := range spec["extfiles"].Map() {
 		vpath := baseDir + "/" + compPath + "/" + v.String() // use full path for file
-		extfile, err := ioutil.ReadFile(vpath)
+		extfile, err := os.ReadFile(vpath)
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error importing extfile")
 		}
@@ -356,7 +360,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				Msg("Creating " + outputFile)
 			updateNeeded = true
 		} else {
-			currentContents, err := ioutil.ReadFile(outputFile)
+			currentContents, err := os.ReadFile(outputFile)
 			if err != nil {
 				log.Fatal().Err(err).Msg("Error reading file")
 			}
@@ -542,12 +546,13 @@ var generateCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(generateCmd)
 	generateCmd.Flags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
-	generateCmd.Flags().StringVarP(&clusters, "clusters", "", "", "clusters to generate - comma separated list of cluster names and/or regular expressions ")
-	generateCmd.Flags().StringVarP(&components, "components", "", "", "components to generate - comma separated list of component names and/or regular expressions")
-	generateCmd.Flags().StringVarP(&generateDir, "generate-dir", "", "", "output directory")
-	generateCmd.Flags().StringVarP(&clIncludes, "clincludes", "", "", "filter included cluster by including clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
-	generateCmd.Flags().StringVarP(&clExcludes, "clexcludes", "", "", "filter included cluster by excluding clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
-	generateCmd.Flags().IntP("parallel", "", runtime.GOMAXPROCS(0), "parallelism - defaults to GOMAXPROCS")
+	generateCmd.Flags().StringVarP(&clusters, "clusters", "l", "", "clusters to generate - comma separated list of cluster names and/or regular expressions ")
+	generateCmd.Flags().StringVarP(&components, "components", "c", "", "components to generate - comma separated list of component names and/or regular expressions")
+	generateCmd.Flags().StringVarP(&generateDir, "generate-dir", "o", "", "output directory")
+	generateCmd.Flags().StringVarP(&clIncludes, "clincludes", "i", "", "filter included cluster by including clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
+	generateCmd.Flags().StringVarP(&clExcludes, "clexcludes", "e", "", "filter included cluster by excluding clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
+	generateCmd.Flags().BoolVarP(&genConfig, "generate-config", "g", false, "Flag to only export generated cluster config")
+	generateCmd.Flags().IntP("parallel", "p", runtime.GOMAXPROCS(0), "parallelism - defaults to GOMAXPROCS")
 	viper.BindPFlag("clincludes", generateCmd.PersistentFlags().Lookup("clincludes"))
 	viper.BindPFlag("clexcludes", generateCmd.PersistentFlags().Lookup("clexcludes"))
 }

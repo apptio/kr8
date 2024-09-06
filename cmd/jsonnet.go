@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -77,7 +76,7 @@ func JsonnetVM(cmd *cobra.Command) (*jsonnet.VM, error) {
 		if len(kv) != 2 {
 			log.Fatal().Str("ext-str-file", extvar).Msg("Failed to parse. Missing '=' in parameter`")
 		}
-		v, err := ioutil.ReadFile(kv[1])
+		v, err := os.ReadFile(kv[1])
 		if err != nil {
 			panic(err)
 		}
