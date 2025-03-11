@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"errors"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -239,7 +239,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 	// file imports
 	for k, v := range spec["extfiles"].Map() {
 		vpath := baseDir + "/" + compPath + "/" + v.String() // use full path for file
-		extfile, err := ioutil.ReadFile(vpath)
+		extfile, err := os.ReadFile(vpath)
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error importing extfile")
 		}
@@ -361,7 +361,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				Msg("Creating " + outputFile)
 			updateNeeded = true
 		} else {
-			currentContents, err := ioutil.ReadFile(outputFile)
+			currentContents, err := os.ReadFile(outputFile)
 			if err != nil {
 				log.Fatal().Err(err).Msg("Error reading file")
 			}
