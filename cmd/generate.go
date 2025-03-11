@@ -35,6 +35,30 @@ var (
 	allClusterParams map[string]string
 )
 
+func processJsonnet(vm *jsonnet.VM, input string, include string) (string, error) {
+	vm.ExtCode("input", input)
+	j, err := vm.EvaluateAnonymousSnippet(include, "std.extVar('process')(std.extVar('input'))")
+	if err != nil {
+		return "Error evaluating jsonnet snippet", err
+	}
+
+	// create output file contents in a string first, as a yaml stream
+	var o []interface{}
+	var outStr string
+	if err := json.Unmarshal([]byte(j), &o); err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
+	for _, jobj := range o {
+		outStr = outStr + "---\n"
+		buf, err := goyaml.Marshal(jobj)
+		if err != nil {
+			log.Fatal().Err(err).Msg("")
+		}
+		outStr = outStr + string(buf) + "\n"
+	}
+	return outStr, nil
+}
+
 func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 	log.Debug().Str("cluster", clusterName).Msg("Process cluster")
 
@@ -316,41 +340,27 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 			Msg("Process file: " + filename + " -> " + outputFile)
 
 		var input string
+		var outStr string
+		var err error
 		switch file_extension {
 		case ".jsonnet":
 			// file is processed as an ExtCode input, so that we can postprocess it
 			// in the snippet
 			input = "( import '" + baseDir + "/" + compPath + "/" + filename + "')"
+			outStr, err = processJsonnet(vm, input, include.String())
+		case ".yml":
 		case ".yaml":
 			input = "std.native('parseYaml')(importstr '" + baseDir + "/" + compPath + "/" + filename + "')"
+			outStr, err = processJsonnet(vm, input, include.String())
 		default:
-			log.Fatal().Str("cluster", clusterName).
-				Str("component", componentName).
-				Str("file", filename).
-				Msg("Unsupported file extension")
+			outStr, err = "", errors.New("unsupported file extension")
 		}
-
-		vm.ExtCode("input", input)
-		j, err := vm.EvaluateAnonymousSnippet(include.String(), "std.extVar('process')(std.extVar('input'))")
 		if err != nil {
 			log.Fatal().Str("cluster", clusterName).
 				Str("component", componentName).
-				Str("file", filename).Err(err).Msg("Error evaluating jsonnet snippet")
-		}
-
-		// create output file contents in a string first, as a yaml stream
-		var o []interface{}
-		var outStr string
-		if err := json.Unmarshal([]byte(j), &o); err != nil {
-			log.Fatal().Err(err).Msg("")
-		}
-		for _, jobj := range o {
-			outStr = outStr + "---\n"
-			buf, err := goyaml.Marshal(jobj)
-			if err != nil {
-				log.Fatal().Err(err).Msg("")
-			}
-			outStr = outStr + string(buf) + "\n"
+				Str("file", filename).
+				Err(err).
+				Msg(outStr)
 		}
 
 		// only write file if it does not exist, or the generated contents does not match what is on disk
