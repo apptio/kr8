@@ -50,22 +50,62 @@ tasks:
 
 ## Params
 
-kr8's most useful feature is the ability to configure _parameters_ for a specific cluster. It does that by specifying a `params.jsonnet` in each component.
+kr8's most useful feature is the ability to configure _parameters_ for a specific cluster.
+It does that by specifying a `params.jsonnet` in each component.
 
-There are some *required* parameters which always must exist. They are:
+Kr8 extracts core configuration parameters from the `kr8_spec` key.
 
-  - `namespace`: the namespace the component should be installed in
-  - `release_name`: analogous to a helm release - what the component should be called when it's installed into a cluster
-  - `kubecfg_gc_enable`: whether this component should be garbage collected when the deployer script cleans up this component (generally should be false for important system components like namespaces)
+Fields:
 
+  - `namespace`: String. Required. The namespace the component should be installed in
+  - `release_name`: String. Required. Analogous to a helm release - what the component should be called when it's installed into a cluster
+  - `enable_kr8_allparams`: Bool. Optional. Includes a full render of all component params.  Used for components that reflect properties of other components.
+  - `enable_kr8_allclusters`: Bool. Optional. Includes a full render of all cluster params.  Used for components that reflect properties of other clusters.
+  - `jpaths`: List[filename]. Optional. Add additional jsonnet lib paths.
+  - `disable_output_clean`: Bool. Optional. Purge any yaml files in the output dir that were not generated
+  - `extfiles`: List[obj]. Optional.  Add additional files to load as jsonnet `ExtVar`s.  Example: `extfiles: [identifier: "filename.jsonnet", otherfile: "filename2.jsonnet" ]`
+  - `includes`: List[string or obj]. Optional. Include and process additional files.  The `file` value must be a `jsonnet`, `yaml`, or `tpl` filename.
+  Example:
+  ```jsonnet
+  includes: [
+    "filename.jsonnet",
+    {
+      file: "filename.jsonnet",
+      dest_dir: "altDir",
+      dest_name: "altname1",
+      dest_ext: "txt"
+    },
+    {
+      file: "filename.jsonnet",
+      dest_name: "altname2",
+    },
+    {
+      file: "filename.jsonnet",
+      dest_name: "altname3",
+      dest_ext: "txt"
+    },
+  ]
+  ```
+  Will generate the following files:
+  ```
+  generate_dir:
+    filename.jsonnet
+    altname2.jsonnet
+    altname3.txt
+    altDir:
+      altname1.txt
+  ``` 
+
+---
 
 Without these parameters, components will not install a function. A barebones `params.jsonnet` would look like this:
 
 ```jsonnet
 {
-  namespace: 'kubemonkey',
-  release_name: 'kubemonkey',
-  kubecfg_gc_enable: true,
+  kr8_spec: {
+    namespace: 'kubemonkey',
+    release_name: 'kubemonkey',
+  },
 }
 ```
 
