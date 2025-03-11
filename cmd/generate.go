@@ -264,6 +264,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 		var filename string
 		var outputDir string
 		var sfile string
+		sfileExtension := ".yaml"
 
 		itype := include.Type.String()
 		outputDir = componentDir
@@ -291,6 +292,10 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				// override destination file name
 				sfile = inc_spec["dest_name"].String()
 			}
+			if inc_spec["dest_ext"].Exists() {
+				// override destination file name
+				sfileExtension = inc_spec["dest_ext"].String()
+			}
 		}
 		file_extension := filepath.Ext(filename)
 		if sfile == "" {
@@ -302,9 +307,9 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				sfile = strings.ReplaceAll(filename[0:len(filename)-len(file_extension)], "/", "_")
 			}
 		}
-		outputFile := outputDir + "/" + sfile + ".yaml"
+		outputFile := outputDir + "/" + sfile + sfileExtension
 		// remember output filename for purging files
-		outputFileMap[sfile+".yaml"] = true
+		outputFileMap[sfile+sfileExtension] = true
 
 		log.Debug().Str("cluster", clusterName).
 			Str("component", componentName).
