@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"text/template"
 
 	goyaml "github.com/ghodss/yaml"
 	jsonnet "github.com/google/go-jsonnet"
@@ -57,6 +59,22 @@ func processJsonnet(vm *jsonnet.VM, input string, include string) (string, error
 		outStr = outStr + string(buf) + "\n"
 	}
 	return outStr, nil
+}
+
+func processTemplate(filename string, data map[string]gjson.Result) (string, error) {
+	tInput, errL := os.ReadFile(filename)
+	if errL != nil {
+		return "Error loading template", errL
+	}
+	tmpl, errP := template.New("file").Parse(string(tInput))
+	if errP != nil {
+		return "Error parsing template", errP
+	}
+	var buffer bytes.Buffer
+	if err := tmpl.Execute(&buffer, data); err != nil {
+		return "Error executing templating", err
+	}
+	return buffer.String(), nil
 }
 
 func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
@@ -352,6 +370,10 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 		case ".yaml":
 			input = "std.native('parseYaml')(importstr '" + baseDir + "/" + compPath + "/" + filename + "')"
 			outStr, err = processJsonnet(vm, input, include.String())
+		case ".tmpl":
+		case ".tpl":
+			// Pass component config as data for the template
+			outStr, err = processTemplate(baseDir+"/"+compPath+"/"+filename, gjson.Get(config, componentName).Map())
 		default:
 			outStr, err = "", errors.New("unsupported file extension")
 		}
