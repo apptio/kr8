@@ -11,7 +11,6 @@ For more information about the inspiration and the problem kr8 solves, check out
 kr8 consists of:
 
  - kr8 - a Go binary for rendering manifests
- - [Task](https://github.com/go-task/task) - a third party Go binary for executing tasks
  - Configs - A configuration directory which contains config for clusters and the components installed into those clusters
 
 kr8 is not designed to be a tool to help you install and deploy applications. It's specifically designed to manage and maintain configuration for the cluster level services. For more information, see the [components](docs/components) section.
@@ -35,7 +34,9 @@ A component is something you install in your cluster to make it function and wor
  - [nginx-ingress](https://github.com/kubernetes/ingress-nginx)
  - [sealed-secrets](https://github.com/bitnami-labs/sealed-secrets)
 
-Components are _not_ the applications you want to run in your cluster. Components are generally applications you'd run in your cluster to make those applications function and work as expected.
+Components are _not_ the applications you want to run in your cluster.
+Components are generally applications you'd run in your cluster to make those applications function and work as expected.
+Individual applications are usually configured and added separately, through automation such as argo.
 
 ## Clusters
 
@@ -43,17 +44,14 @@ A cluster is a Kubernetes cluster running in a cloud provider, datacenter or els
 
 Clusters have:
 
-  - Cluster configuration, which can be used as part of the Jsonnet configuration later. This consists of things like the cluster name, type, region etc
-  - Components, which you'd like to install in a cluster
-  - Component configuration, which is modifications to a component which are specific to a cluster. An example of this might be the path to an SSL certificate for the nginx-ingress controller, which may be different across cloud providers.
-
-## Taskfiles
-
-Instead of reinventing the wheel, the kr8 ecosystem makes uses of the [Task](https://github.com/go-task/task) tool to generate the cluster configuration. The task files generally call kr8 in order to render the manifests for a component. We chose task because it supports yaml and json configuration files, which mean we can continue to leverage jsonnet to write taskfiles where needed.
+  - Cluster configuration, which can be used as part of the Jsonnet configuration later. This consists of things like the cluster name, type, region etc. Key: `_cluster`.
+  - Components, which you'd like to install in a cluster. Key: `_components`.
+  - Component configuration, which is modifications to a component which are specific to a cluster. An example of this might be the path to an SSL certificate for the nginx-ingress controller, which may be different across cloud providers. Key: `<component_name>`.
 
 ## Jsonnet
 
-All configuration for kr8 is written in [Jsonnet](https://jsonnet.org/). Jsonnet was chosen because it allows us to use code for configuration, while staying as close to JSON as possible.
+All configuration for kr8 is written in [Jsonnet](https://jsonnet.org/). 
+Jsonnet was chosen because it allows us to use code for configuration, while staying as close to JSON as possible.
 
 # Building
 
