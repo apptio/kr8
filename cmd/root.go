@@ -40,6 +40,7 @@ var (
 	componentDir  string
 	clusterParams string
 	cluster       string
+	logLevel      string
 
 	debug       bool
 	colorOutput bool
@@ -82,8 +83,9 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&baseDir, "base", "d", ".", "kr8 config base directory")
 	RootCmd.PersistentFlags().StringVarP(&clusterDir, "clusterdir", "D", "", "kr8 cluster directory")
 	RootCmd.PersistentFlags().StringVarP(&componentDir, "componentdir", "X", "", "kr8 component directory")
-	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing")
 	RootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "log less information about what kr8 is doing")
+	RootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "L", "info", "set log level")
+	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "log more information about what kr8 is doing. Overrides --loglevel")
 	RootCmd.PersistentFlags().BoolVar(&colorOutput, "color", true, "enable colorized output (default). Set to false to disable")
 	RootCmd.PersistentFlags().BoolVar(&noexit, "noexit", false, "No exit when encountering a fatal error")
 	RootCmd.PersistentFlags().BoolVar(&long, "long", false, "long-form error messages")
@@ -99,6 +101,27 @@ func init() {
 func initConfig() {
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
+	}
+
+	if debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		switch logLevel {
+		case "debug":
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		case "info":
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		case "warn":
+			zerolog.SetGlobalLevel(zerolog.WarnLevel)
+		case "error":
+			zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+		case "fatal":
+			zerolog.SetGlobalLevel(zerolog.FatalLevel)
+		case "panic":
+			zerolog.SetGlobalLevel(zerolog.PanicLevel)
+		default:
+			log.Fatal().Msg("invalid log level: " + logLevel)
+		}
 	}
 
 	viper.SetConfigName(".kr8") // name of config file (without extension)

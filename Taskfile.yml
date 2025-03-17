@@ -1,8 +1,20 @@
 version: '2'
 
-
-
 tasks:
+  default:
+    cmds:
+      - task: build
+
+  build:
+    desc: Build kr8 for your local system
+    cmds:
+      - go build
+
+  build-snapshot:
+    desc: Build a snapshot for all platforms using goreleaser
+    cmds:
+      - goreleaser release --snapshot --clean --skip=homebrew,docker
+
   mkdocs:
     desc: Install mkdocs
     cmds:
@@ -17,4 +29,3 @@ tasks:
     cmds:
       - pipenv run mkdocs build
       - pipenv run mkdocs gh-deploy
-
