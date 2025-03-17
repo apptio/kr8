@@ -62,16 +62,19 @@ func processJsonnet(vm *jsonnet.VM, input string, include string) (string, error
 }
 
 func processTemplate(filename string, data map[string]gjson.Result) (string, error) {
-	tInput, errL := os.ReadFile(filename)
-	if errL != nil {
-		return "Error loading template", errL
-	}
-	tmpl, errP := template.New("file").Parse(string(tInput))
-	if errP != nil {
-		return "Error parsing template", errP
-	}
+	var tInput []byte
+	var tmpl *template.Template
 	var buffer bytes.Buffer
-	if err := tmpl.Execute(&buffer, data); err != nil {
+	var err error
+	tInput, err = os.ReadFile(filename)
+	if err != nil {
+		return "Error loading template", err
+	}
+	tmpl, err = template.New("file").Parse(string(tInput))
+	if err != nil {
+		return "Error parsing template", err
+	}
+	if err = tmpl.Execute(&buffer, data); err != nil {
 		return "Error executing templating", err
 	}
 	return buffer.String(), nil
