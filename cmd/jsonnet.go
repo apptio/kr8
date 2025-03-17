@@ -323,7 +323,7 @@ func init() {
 	jsonnetrenderCmd.PersistentFlags().BoolVarP(&pruneFlag, "prune", "", true, "Prune null and empty objects from rendered json")
 	jsonnetrenderCmd.PersistentFlags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
 	jsonnetrenderCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
-	jsonnetrenderCmd.PersistentFlags().StringVarP(&outputFormat, "format", "F", "json", "Output forma: json, yaml, stream")
+	jsonnetrenderCmd.PersistentFlags().StringVarP(&outputFormat, "format", "F", "json", "Output format: json, yaml, stream")
 
 	jsonnetrenderCmd.PersistentFlags().StringP("cluster", "c", "", "cluster to render params for")
 	viper.BindPFlag("cluster", jsonnetrenderCmd.PersistentFlags().Lookup("cluster"))
