@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/fatih/color v1.18.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/google/go-jsonnet v0.21.0
+	github.com/google/go-jsonnet v0.20.0
 	github.com/grafana/tanka v0.32.0
 	github.com/hashicorp/go-getter v1.7.8
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
