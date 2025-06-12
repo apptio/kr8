@@ -90,6 +90,7 @@ func initConfig() {
 
 	if debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+
 	} else {
 		switch logLevel {
 		case "debug":
@@ -120,7 +121,10 @@ func initConfig() {
 		log.Debug().Msg("Using config file:" + viper.ConfigFileUsed())
 	}
 	colorOutput = viper.GetBool("color")
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: !colorOutput})
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:     os.Stderr,
+		NoColor: !colorOutput,
+	})
 
 	baseDir = viper.GetString("base")
 	log.Debug().Msg("Using base directory: " + baseDir)

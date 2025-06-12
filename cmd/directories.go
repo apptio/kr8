@@ -3,13 +3,13 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rs/zerolog/log"
-	"github.com/spf13/cobra"
-	"github.com/tidwall/gjson"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/cobra"
+	"github.com/tidwall/gjson"
 )
 
 type componentDef struct {
@@ -167,7 +167,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 		for _, key := range componentNames {
 			if value, ok := componentMap[key]; ok {
 				path := baseDir + "/" + value.Path + "/params.jsonnet"
-				filec, err := ioutil.ReadFile(path)
+				filec, err := os.ReadFile(path)
 				if err != nil {
 					log.Fatal().Err(err).Msg("Error reading " + path)
 				}
@@ -181,7 +181,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 				continue
 			}
 			path := baseDir + "/" + value.Path + "/params.jsonnet"
-			filec, err := ioutil.ReadFile(path)
+			filec, err := os.ReadFile(path)
 			if err != nil {
 				log.Fatal().Err(err).Msg("Error reading " + path)
 			}
