@@ -10,6 +10,7 @@ builds:
       - darwin
     goarch:
       - amd64
+      - arm64
     main: .
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
     binary: kr8
@@ -61,7 +62,7 @@ brews:
         enabled: true
       git:
         url: 'git@github.com:apptio/homebrew-tap.git'
-        private_key: '{{ .Env.PRIVATE_KEY_PATH }}'
+        private_key: '{{ .Env.BREW_PRIVATE_KEY }}'
 
     commit_author:
       name: release
