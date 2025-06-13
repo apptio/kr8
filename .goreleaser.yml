@@ -23,7 +23,7 @@ archives:
     - scripts/*
     - docs/*
 snapshot:
-  name_template: SNAPSHOT-{{ .Commit }}
+  version_template: SNAPSHOT-{{ .Commit }}
 dist: dist
 dockers:
   -
