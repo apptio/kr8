@@ -24,7 +24,7 @@ jobs:
           go-version: 1.24.0
       -
         name: Docker Login
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
