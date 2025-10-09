@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -239,7 +239,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 	// file imports
 	for k, v := range spec["extfiles"].Map() {
 		vpath := baseDir + "/" + compPath + "/" + v.String() // use full path for file
-		extfile, err := ioutil.ReadFile(vpath)
+		extfile, err := os.ReadFile(vpath)
 		if err != nil {
 			fatalog(err).Msg("Error importing extfile")
 		}
@@ -263,7 +263,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 	for _, include := range spec["includes"].Array() {
 		var filename string
 		var outputDir string
-		var sfile string
+		var genFileNamePrefix string
 
 		itype := include.Type.String()
 		outputDir = componentDir
@@ -289,22 +289,22 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 			}
 			if inc_spec["dest_name"].Exists() {
 				// override destination file name
-				sfile = inc_spec["dest_name"].String()
+				genFileNamePrefix = inc_spec["dest_name"].String()
 			}
 		}
 		file_extension := filepath.Ext(filename)
-		if sfile == "" {
+		if genFileNamePrefix == "" {
 			if generateShortNames {
 				sbase := filepath.Base(filename)
-				sfile = sbase[0 : len(sbase)-len(file_extension)]
+				genFileNamePrefix = sbase[0 : len(sbase)-len(file_extension)]
 			} else {
 				// replaces slashes with _ in multi-dir paths and replace extension with yaml
-				sfile = strings.ReplaceAll(filename[0:len(filename)-len(file_extension)], "/", "_")
+				genFileNamePrefix = strings.ReplaceAll(filename[0:len(filename)-len(file_extension)], "/", "_")
 			}
 		}
-		outputFile := outputDir + "/" + sfile + ".yaml"
+		outputFile := outputDir + "/" + genFileNamePrefix + ".yaml"
 		// remember output filename for purging files
-		outputFileMap[sfile+".yaml"] = true
+		outputFileMap[genFileNamePrefix+".yaml"] = true
 
 		debuglog(err).Str("cluster", clusterName).
 			Str("component", componentName).
@@ -312,7 +312,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 
 		var input string
 		switch file_extension {
-		case ".jsonnet":
+		case ".jsonnet", ".json":
 			// file is processed as an ExtCode input, so that we can postprocess it
 			// in the snippet
 			input = "( import '" + baseDir + "/" + compPath + "/" + filename + "')"
@@ -326,6 +326,10 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 		}
 
 		vm.ExtCode("input", input)
+
+		// Pass in an external var containing some metadata about this include. Currently just the dest_name prefix.
+		vm.ExtCode("kr8_include_meta", fmt.Sprintf("{\"dest_name\":\"%s\"}", genFileNamePrefix))
+
 		j, err := vm.EvaluateAnonymousSnippet(include.String(), "std.extVar('process')(std.extVar('input'))")
 		if err != nil {
 			fatalog(err).Str("cluster", clusterName).
@@ -356,7 +360,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				Msg("Creating " + outputFile)
 			updateNeeded = true
 		} else {
-			currentContents, err := ioutil.ReadFile(outputFile)
+			currentContents, err := os.ReadFile(outputFile)
 			if err != nil {
 				fatalog(err).Msg("Error reading file")
 			}

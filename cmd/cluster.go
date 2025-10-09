@@ -52,7 +52,7 @@ var listCmd = &cobra.Command{
 
 		var entry []string
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Name", "Path"})
+		table.Header([]string{"Name", "Path"})
 
 		for _, c := range clusters.Cluster {
 			entry = append(entry, c.Name)

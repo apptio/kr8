@@ -105,6 +105,7 @@ func initConfig() {
 
 	if debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+
 	} else {
 		switch logLevel {
 		case "debug":
