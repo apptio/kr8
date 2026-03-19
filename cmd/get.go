@@ -37,8 +37,9 @@ var getclustersCmd = &cobra.Command{
 	Short: "Get all clusters",
 	Long:  "Get all clusters defined in kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg := GetConfigFromContext(cmd.Context())
 
-		clusters, err := getClusters(clusterDir)
+		clusters, err := getClusters(cfg)
 
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error getting cluster")
@@ -64,8 +65,11 @@ var getcomponentsCmd = &cobra.Command{
 	Short: "Get all components",
 	Long:  "Get all available components defined in the kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg := GetConfigFromContext(cmd.Context())
 
-		clusterName := cluster
+		clusterName, _ := cmd.Flags().GetString("cluster")
+		clusterParams, _ := cmd.Flags().GetString("clusterparams")
+		paramPath, _ := cmd.Flags().GetString("param")
 
 		if clusterName == "" {
 			log.Fatal().Msg("Please specify a --cluster name")
@@ -73,24 +77,24 @@ var getcomponentsCmd = &cobra.Command{
 
 		var params []string
 		if clusterName != "" {
-			clusterPath := getCluster(clusterDir, clusterName)
-			params = getClusterParams(clusterDir, clusterPath)
+			clusterPath := getCluster(cfg, clusterName)
+			params = getClusterParams(cfg, clusterPath)
 		}
 		if clusterParams != "" {
 			params = append(params, clusterParams)
 		}
 
-		j := renderJsonnet(cmd, params, "._components", true, "", "components")
+		j := renderJsonnet(cfg, cmd, params, "._components", true, "", "components")
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {
 				log.Fatal().Msg("Error getting param: " + paramPath)
 			} else {
-				formatted := Pretty(j, colorOutput)
+				formatted := Pretty(j, cfg.ColorOutput)
 				fmt.Println(formatted)
 			}
 		} else {
-			formatted := Pretty(j, colorOutput)
+			formatted := Pretty(j, cfg.ColorOutput)
 			fmt.Println(formatted)
 		}
 	},
@@ -101,8 +105,12 @@ var getparamsCmd = &cobra.Command{
 	Short: "Get parameter for components and clusters",
 	Long:  "Get parameters assigned to clusters and components in the kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg := GetConfigFromContext(cmd.Context())
 
-		clusterName := cluster
+		clusterName, _ := cmd.Flags().GetString("cluster")
+		componentName, _ := cmd.Flags().GetString("component")
+		clusterParams, _ := cmd.Flags().GetString("clusterparams")
+		paramPath, _ := cmd.Flags().GetString("param")
 
 		if clusterName == "" {
 			log.Fatal().Msg("Please specify a --cluster")
@@ -110,7 +118,7 @@ var getparamsCmd = &cobra.Command{
 
 		fmt.Println(componentName)
 
-		j := renderClusterParams(cmd, clusterName, []string{componentName}, clusterParams, true)
+		j := renderClusterParams(cfg, cmd, clusterName, []string{componentName}, clusterParams, true)
 
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
@@ -121,7 +129,7 @@ var getparamsCmd = &cobra.Command{
 				fmt.Println(value) // no formatting because this isn't always json, this is just the value of a field
 			}
 		} else {
-			formatted := Pretty(j, colorOutput)
+			formatted := Pretty(j, cfg.ColorOutput)
 			fmt.Println(formatted)
 		}
 
@@ -134,11 +142,15 @@ func init() {
 	getCmd.AddCommand(getclustersCmd)
 	// components
 	getCmd.AddCommand(getcomponentsCmd)
-	getcomponentsCmd.PersistentFlags().StringVarP(&cluster, "cluster", "c", "", "get components for cluster")
+	getcomponentsCmd.PersistentFlags().StringP("cluster", "c", "", "get components for cluster")
+	getcomponentsCmd.Flags().String("clusterparams", "", "provide cluster params as single file")
+	getcomponentsCmd.Flags().StringP("param", "P", "", "return value of json param from supplied path")
 	// params
 	getCmd.AddCommand(getparamsCmd)
-	getparamsCmd.PersistentFlags().StringVarP(&cluster, "cluster", "c", "", "get components for cluster")
-	getparamsCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
-	getparamsCmd.Flags().StringVarP(&paramPath, "param", "P", "", "return value of json param from supplied path")
+	getparamsCmd.PersistentFlags().StringP("cluster", "c", "", "get components for cluster")
+	getparamsCmd.PersistentFlags().StringP("component", "C", "", "component to render params for")
+	getparamsCmd.Flags().String("clusterparams", "", "provide cluster params as single file")
+	getparamsCmd.Flags().StringP("param", "P", "", "return value of json param from supplied path")
+	getparamsCmd.Flags().BoolP("notunset", "", false, "Fail if specified param is not set")
 
 }

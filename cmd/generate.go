@@ -17,7 +17,6 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 )
 
@@ -26,24 +25,15 @@ type safeString struct {
 	config string
 }
 
-var (
-	components       string
-	clusters         string
-	generateDir      string
-	clIncludes       string
-	clExcludes       string
-	allClusterParams map[string]string
-)
-
-func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
+func genProcessCluster(cfg *Config, cmd *cobra.Command, clusterName string, clusterParams string, components string, generateDir string, allClusterParams map[string]string, p *ants.Pool) {
 	log.Debug().Str("cluster", clusterName).Msg("Process cluster")
 
 	// get list of components for cluster
-	params := getClusterParams(clusterDir, getCluster(clusterDir, clusterName))
-	clusterComponents := gjson.Parse(renderJsonnet(cmd, params, "._components", true, "", "clustercomponents")).Map()
+	params := getClusterParams(cfg, getCluster(cfg, clusterName))
+	clusterComponents := gjson.Parse(renderJsonnet(cfg, cmd, params, "._components", true, "", "clustercomponents")).Map()
 
 	// get kr8 settings for cluster
-	kr8Spec := gjson.Parse(renderJsonnet(cmd, params, "._kr8_spec", false, "", "kr8_spec"))
+	kr8Spec := gjson.Parse(renderJsonnet(cfg, cmd, params, "._kr8_spec", false, "", "kr8_spec"))
 	postProcessorFunction := kr8Spec.Get("postprocessor").String()
 
 	var clGenerateDir string
@@ -57,7 +47,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 	}
 	if !strings.HasPrefix(clGenerateDir, "/") {
 		// if generateDir does not start with /, then it goes in baseDir
-		clGenerateDir = baseDir + "/" + clGenerateDir
+		clGenerateDir = cfg.BaseDir + "/" + clGenerateDir
 	}
 	clusterDir := clGenerateDir + "/" + clusterName
 
@@ -143,7 +133,7 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 	}
 
 	// render full params for cluster for all selected components
-	config := renderClusterParams(cmd, clusterName, compList, clusterParams, false)
+	config := renderClusterParams(cfg, cmd, clusterName, compList, clusterParams, false)
 
 	var allconfig safeString
 
@@ -154,14 +144,14 @@ func genProcessCluster(cmd *cobra.Command, clusterName string, p *ants.Pool) {
 		cName := componentName
 		_ = p.Submit(func() {
 			defer wg.Done()
-			genProcessComponent(cmd, clusterName, cName, clusterDir, clGenerateDir, config, &allconfig, postProcessorFunction, pruneParams, generateShortNames)
+			genProcessComponent(cfg, cmd, clusterName, cName, clusterDir, clGenerateDir, config, &allconfig, postProcessorFunction, pruneParams, generateShortNames, components, clusterParams, allClusterParams)
 		})
 	}
 	wg.Wait()
 
 }
 
-func genProcessComponent(cmd *cobra.Command, clusterName string, componentName string, clusterDir string, clGenerateDir string, config string, allconfig *safeString, postProcessorFunction string, pruneParams bool, generateShortNames bool) {
+func genProcessComponent(cfg *Config, cmd *cobra.Command, clusterName string, componentName string, clusterDir string, clGenerateDir string, config string, allconfig *safeString, postProcessorFunction string, pruneParams bool, generateShortNames bool, components string, clusterParams string, allClusterParams map[string]string) {
 
 	log.Info().Str("cluster", clusterName).
 		Str("component", componentName).
@@ -180,7 +170,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 	}
 
 	// it's faster to create this VM for each component, rather than re-use
-	vm, _ := JsonnetVM(cmd)
+	vm, _ := JsonnetVM(cfg, cmd)
 	vm.ExtCode("kr8_cluster", "std.prune("+config+"._cluster)")
 	//vm.ExtCode("kr8_components", "std.prune("+config+"._components)")
 	if postProcessorFunction != "" {
@@ -207,7 +197,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 				// all component params are in config
 				allconfig.config = config
 			} else {
-				allconfig.config = renderClusterParams(cmd, clusterName, []string{}, clusterParams, false)
+				allconfig.config = renderClusterParams(cfg, cmd, clusterName, []string{}, clusterParams, false)
 			}
 		}
 		vm.ExtCode("kr8_allparams", allconfig.config)
@@ -228,9 +218,9 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 	}
 
 	// jpath always includes base lib. Add jpaths from spec if set
-	jpath := []string{baseDir + "/lib"}
+	jpath := []string{cfg.BaseDir + "/lib"}
 	for _, j := range spec["jpaths"].Array() {
-		jpath = append(jpath, baseDir+"/"+compPath+"/"+j.String())
+		jpath = append(jpath, cfg.BaseDir+"/"+compPath+"/"+j.String())
 	}
 	vm.Importer(&jsonnet.FileImporter{
 		JPaths: jpath,
@@ -238,7 +228,7 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 
 	// file imports
 	for k, v := range spec["extfiles"].Map() {
-		vpath := baseDir + "/" + compPath + "/" + v.String() // use full path for file
+		vpath := cfg.BaseDir + "/" + compPath + "/" + v.String() // use full path for file
 		extfile, err := os.ReadFile(vpath)
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error importing extfile")
@@ -315,9 +305,9 @@ func genProcessComponent(cmd *cobra.Command, clusterName string, componentName s
 		case ".jsonnet", ".json":
 			// file is processed as an ExtCode input, so that we can postprocess it
 			// in the snippet
-			input = "( import '" + baseDir + "/" + compPath + "/" + filename + "')"
+			input = "( import '" + cfg.BaseDir + "/" + compPath + "/" + filename + "')"
 		case ".yaml":
-			input = "std.native('parseYaml')(importstr '" + baseDir + "/" + compPath + "/" + filename + "')"
+			input = "std.native('parseYaml')(importstr '" + cfg.BaseDir + "/" + compPath + "/" + filename + "')"
 		default:
 			log.Fatal().Str("cluster", clusterName).
 				Str("component", componentName).
@@ -424,17 +414,26 @@ var generateCmd = &cobra.Command{
 
 	Args: cobra.MinimumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg := GetConfigFromContext(cmd.Context())
+
+		// Get flag values
+		clusterParams, _ := cmd.Flags().GetString("clusterparams")
+		clusters, _ := cmd.Flags().GetString("clusters")
+		components, _ := cmd.Flags().GetString("components")
+		generateDir, _ := cmd.Flags().GetString("generate-dir")
+		clIncludes, _ := cmd.Flags().GetString("clincludes")
+		clExcludes, _ := cmd.Flags().GetString("clexcludes")
 
 		var clusterList []string
 
 		// get list of all clusters, render cluster level params for all of them
-		allClusterParams = make(map[string]string)
-		allClusters, err := getClusters(clusterDir)
+		allClusterParams := make(map[string]string)
+		allClusters, err := getClusters(cfg)
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error getting list of clusters")
 		}
 		for _, c := range allClusters.Cluster {
-			allClusterParams[c.Name] = renderClusterParamsOnly(cmd, c.Name, "", false)
+			allClusterParams[c.Name] = renderClusterParamsOnly(cfg, cmd, c.Name, "", false)
 		}
 
 		for c, _ := range allClusterParams {
@@ -536,7 +535,7 @@ var generateCmd = &cobra.Command{
 			cl := clusterName
 			_ = ants_cl.Submit(func() {
 				defer wg.Done()
-				genProcessCluster(cmd, cl, ants_cp)
+				genProcessCluster(cfg, cmd, cl, clusterParams, components, generateDir, allClusterParams, ants_cp)
 			})
 		}
 		wg.Wait()
@@ -545,13 +544,11 @@ var generateCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(generateCmd)
-	generateCmd.Flags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
-	generateCmd.Flags().StringVarP(&clusters, "clusters", "", "", "clusters to generate - comma separated list of cluster names and/or regular expressions ")
-	generateCmd.Flags().StringVarP(&components, "components", "", "", "components to generate - comma separated list of component names and/or regular expressions")
-	generateCmd.Flags().StringVarP(&generateDir, "generate-dir", "", "", "output directory")
-	generateCmd.Flags().StringVarP(&clIncludes, "clincludes", "", "", "filter included cluster by including clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
-	generateCmd.Flags().StringVarP(&clExcludes, "clexcludes", "", "", "filter included cluster by excluding clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
+	generateCmd.Flags().String("clusterparams", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
+	generateCmd.Flags().String("clusters", "", "clusters to generate - comma separated list of cluster names and/or regular expressions ")
+	generateCmd.Flags().String("components", "", "components to generate - comma separated list of component names and/or regular expressions")
+	generateCmd.Flags().String("generate-dir", "", "output directory")
+	generateCmd.Flags().String("clincludes", "", "filter included cluster by including clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
+	generateCmd.Flags().String("clexcludes", "", "filter included cluster by excluding clusters with matching cluster parameters - comma separate list of key/value conditions separated by = or ~ (for regex match)")
 	generateCmd.Flags().IntP("parallel", "", runtime.GOMAXPROCS(0), "parallelism - defaults to GOMAXPROCS")
-	viper.BindPFlag("clincludes", generateCmd.PersistentFlags().Lookup("clincludes"))
-	viper.BindPFlag("clexcludes", generateCmd.PersistentFlags().Lookup("clexcludes"))
 }

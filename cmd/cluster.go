@@ -27,7 +27,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 )
 
@@ -44,8 +43,9 @@ var listCmd = &cobra.Command{
 	Short: "List Clusters",
 	Long:  "List Clusters in kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg := GetConfigFromContext(cmd.Context())
 
-		clusters, err := getClusters(clusterDir)
+		clusters, err := getClusters(cfg)
 
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error getting cluster")
@@ -71,19 +71,23 @@ var paramsCmd = &cobra.Command{
 	Short: "Show Cluster Params",
 	Long:  "Show cluster params in kr8 config hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.BindPFlag("cluster", clusterCmd.PersistentFlags().Lookup("cluster"))
-		clusterName := viper.GetString("cluster")
+		cfg := GetConfigFromContext(cmd.Context())
+
+		clusterName, _ := cmd.Flags().GetString("cluster")
+		clusterParams, _ := cmd.Flags().GetString("clusterparams")
 
 		if clusterName == "" && clusterParams == "" {
 			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
 		}
 
+		componentName, _ := cmd.Flags().GetString("component")
 		var clist []string
 		if componentName != "" {
 			clist = append(clist, componentName)
 		}
-		j := renderClusterParams(cmd, clusterName, clist, clusterParams, false)
+		j := renderClusterParams(cfg, cmd, clusterName, clist, clusterParams, false)
 
+		paramPath, _ := cmd.Flags().GetString("param")
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			notunset, _ := cmd.Flags().GetBool("notunset")
@@ -93,7 +97,7 @@ var paramsCmd = &cobra.Command{
 				fmt.Println(value) // no formatting because this isn't always json, this is just the value of a field
 			}
 		} else {
-			formatted := Pretty(j, colorOutput)
+			formatted := Pretty(j, cfg.ColorOutput)
 			fmt.Println(formatted)
 		}
 
@@ -105,8 +109,10 @@ var componentsCmd = &cobra.Command{
 	Short: "Show Cluster Components",
 	Long:  "Show the components to be installed in the cluster in the kr8 hierarchy",
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.BindPFlag("cluster", clusterCmd.PersistentFlags().Lookup("cluster"))
-		clusterName := viper.GetString("cluster")
+		cfg := GetConfigFromContext(cmd.Context())
+
+		clusterName, _ := cmd.Flags().GetString("cluster")
+		clusterParams, _ := cmd.Flags().GetString("clusterparams")
 
 		if clusterName == "" && clusterParams == "" {
 			log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
@@ -114,24 +120,25 @@ var componentsCmd = &cobra.Command{
 
 		var params []string
 		if clusterName != "" {
-			clusterPath := getCluster(clusterDir, clusterName)
-			params = getClusterParams(clusterDir, clusterPath)
+			clusterPath := getCluster(cfg, clusterName)
+			params = getClusterParams(cfg, clusterPath)
 		}
 		if clusterParams != "" {
 			params = append(params, clusterParams)
 		}
 
-		j := renderJsonnet(cmd, params, "._components", true, "", "clustercomponents")
+		j := renderJsonnet(cfg, cmd, params, "._components", true, "", "clustercomponents")
+		paramPath, _ := cmd.Flags().GetString("param")
 		if paramPath != "" {
 			value := gjson.Get(j, paramPath)
 			if value.String() == "" {
 				log.Fatal().Msg("Error getting param: " + paramPath)
 			} else {
-				formatted := Pretty(j, colorOutput)
+				formatted := Pretty(j, cfg.ColorOutput)
 				fmt.Println(formatted)
 			}
 		} else {
-			formatted := Pretty(j, colorOutput)
+			formatted := Pretty(j, cfg.ColorOutput)
 			fmt.Println(formatted)
 		}
 
@@ -144,8 +151,9 @@ func init() {
 	clusterCmd.AddCommand(paramsCmd)
 	clusterCmd.AddCommand(componentsCmd)
 	clusterCmd.PersistentFlags().StringP("cluster", "c", "", "cluster to operate on")
-	clusterCmd.PersistentFlags().StringVarP(&clusterParams, "clusterparams", "", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
-	paramsCmd.PersistentFlags().StringVarP(&componentName, "component", "C", "", "component to render params for")
-	paramsCmd.Flags().StringVarP(&paramPath, "param", "P", "", "return value of json param from supplied path")
+	clusterCmd.PersistentFlags().String("clusterparams", "", "provide cluster params as single file - can be combined with --cluster to override cluster")
+	paramsCmd.PersistentFlags().String("component", "", "component to render params for")
+	paramsCmd.Flags().StringP("param", "P", "", "return value of json param from supplied path")
 	paramsCmd.Flags().BoolP("notunset", "", false, "Fail if specified param is not set. Otherwise returns blank value if param is not set")
+	componentsCmd.Flags().StringP("param", "P", "", "return value of json param from supplied path")
 }

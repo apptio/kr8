@@ -21,11 +21,11 @@ func (c *Clusters) addItem(item Cluster) Clusters {
 	return *c
 }
 
-func getClusters(searchDir string) (Clusters, error) {
+func getClusters(cfg *Config) (Clusters, error) {
 
 	fileList := make([]string, 0)
 
-	e := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
+	e := filepath.Walk(cfg.ClusterDir, func(path string, f os.FileInfo, err error) error {
 		fileList = append(fileList, path)
 		return err
 	})
@@ -55,11 +55,11 @@ func getClusters(searchDir string) (Clusters, error) {
 
 }
 
-func getCluster(searchDir string, clusterName string) string {
+func getCluster(cfg *Config, clusterName string) string {
 
 	var clusterPath string
 
-	e := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
+	e := filepath.Walk(cfg.ClusterDir, func(path string, f os.FileInfo, err error) error {
 		dir, file := filepath.Split(path)
 		if filepath.Base(dir) == clusterName && file == "cluster.jsonnet" {
 			clusterPath = path
@@ -82,7 +82,7 @@ func getCluster(searchDir string, clusterName string) string {
 
 }
 
-func getClusterParams(basePath string, targetPath string) []string {
+func getClusterParams(cfg *Config, targetPath string) []string {
 
 	// a slice to store results
 	var results []string
@@ -96,7 +96,7 @@ func getClusterParams(basePath string, targetPath string) []string {
 
 	// walk through the directory hierachy
 	for {
-		rel, _ := filepath.Rel(basePath, targetDir)
+		rel, _ := filepath.Rel(cfg.ClusterDir, targetDir)
 
 		// check if there's a params.json in the folder
 		if _, err := os.Stat(targetDir + "/params.jsonnet"); err == nil {
@@ -123,22 +123,22 @@ func getClusterParams(basePath string, targetPath string) []string {
 }
 
 // only render cluster params (_cluster), without components
-func renderClusterParamsOnly(cmd *cobra.Command, clusterName string, clusterParams string, prune bool) string {
+func renderClusterParamsOnly(cfg *Config, cmd *cobra.Command, clusterName string, clusterParams string, prune bool) string {
 	var params []string
 	if clusterName != "" {
-		clusterPath := getCluster(clusterDir, clusterName)
-		params = getClusterParams(clusterDir, clusterPath)
+		clusterPath := getCluster(cfg, clusterName)
+		params = getClusterParams(cfg, clusterPath)
 	}
 	if clusterParams != "" {
 		params = append(params, clusterParams)
 	}
-	renderedParams := renderJsonnet(cmd, params, "._cluster", prune, "", "clusterparams")
+	renderedParams := renderJsonnet(cfg, cmd, params, "._cluster", prune, "", "clusterparams")
 
 	return renderedParams
 }
 
 // render cluster params, merged with one or more component's parameters. Empty componentName list renders all component parameters
-func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames []string, clusterParams string, prune bool) string {
+func renderClusterParams(cfg *Config, cmd *cobra.Command, clusterName string, componentNames []string, clusterParams string, prune bool) string {
 	if clusterName == "" && clusterParams == "" {
 		log.Fatal().Msg("Please specify a --cluster name and/or --clusterparams")
 	}
@@ -147,14 +147,14 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 	var componentMap map[string]componentDef
 
 	if clusterName != "" {
-		clusterPath := getCluster(clusterDir, clusterName)
-		params = getClusterParams(clusterDir, clusterPath)
+		clusterPath := getCluster(cfg, clusterName)
+		params = getClusterParams(cfg, clusterPath)
 	}
 	if clusterParams != "" {
 		params = append(params, clusterParams)
 	}
 
-	compParams := renderJsonnet(cmd, params, "", true, "", "clusterparams")
+	compParams := renderJsonnet(cfg, cmd, params, "", true, "", "clusterparams")
 
 	compString := gjson.Get(compParams, "_components")
 	err := json.Unmarshal([]byte(compString.String()), &componentMap)
@@ -166,7 +166,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 		// we are passed a list of components
 		for _, key := range componentNames {
 			if value, ok := componentMap[key]; ok {
-				path := baseDir + "/" + value.Path + "/params.jsonnet"
+				path := cfg.BaseDir + "/" + value.Path + "/params.jsonnet"
 				filec, err := os.ReadFile(path)
 				if err != nil {
 					log.Fatal().Err(err).Msg("Error reading " + path)
@@ -177,10 +177,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 	} else {
 		// all components
 		for key, value := range componentMap {
-			if componentName != "" && key != componentName {
-				continue
-			}
-			path := baseDir + "/" + value.Path + "/params.jsonnet"
+			path := cfg.BaseDir + "/" + value.Path + "/params.jsonnet"
 			filec, err := os.ReadFile(path)
 			if err != nil {
 				log.Fatal().Err(err).Msg("Error reading " + path)
@@ -190,7 +187,7 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 	}
 	componentDefaultsMerged = componentDefaultsMerged + "}"
 
-	compParams = renderJsonnet(cmd, params, "", prune, componentDefaultsMerged, "componentparams")
+	compParams = renderJsonnet(cfg, cmd, params, "", prune, componentDefaultsMerged, "componentparams")
 
 	return compParams
 }
