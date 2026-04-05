@@ -94,7 +94,7 @@ func renderJsonnet(cmd *cobra.Command, files []string, param string, prune bool,
 
 	// range through the files
 	for _, s := range files {
-		jsonnetPaths = append(jsonnetPaths, fmt.Sprintf("(import '%s')", s))
+		jsonnetPaths = append(jsonnetPaths, "(import '"+s+"')")
 	}
 
 	// Create a JSonnet VM
