@@ -77,5 +77,3 @@ brews:
       bin.install "scripts/kr8-helpers"
     dependencies:
       - helm
-      - jsonnet
-      - go-task/tap/go-task
