@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +12,8 @@ import (
 )
 
 type componentDef struct {
-	Path string `json:"path"`
+	Path   string      `json:"path"`
+	Enable interface{} `json:"enable,omitempty"` // Can be bool or will be evaluated as jsonnet expression
 }
 
 func (c *Clusters) addItem(item Cluster) Clusters {
@@ -119,7 +119,6 @@ func getClusterParams(basePath string, targetPath string) []string {
 	}
 
 	return results
-
 }
 
 // only render cluster params (_cluster), without components
@@ -148,7 +147,14 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 
 	if clusterName != "" {
 		clusterPath := getCluster(clusterDir, clusterName)
-		params = getClusterParams(clusterDir, clusterPath)
+		// prepend _components.jsonnet if it exists
+		registryPath := baseDir + "/instances/_components.jsonnet"
+		if _, err := os.Stat(registryPath); err == nil {
+			log.Debug().Str("registry", registryPath).Str("targetPath", clusterPath).Msg("Loading component registry")
+			params = append(params, registryPath)
+		}
+		// get list of jsonnet files that form the cluster's params
+		params = append(params, getClusterParams(clusterDir, clusterPath)...)
 	}
 	if clusterParams != "" {
 		params = append(params, clusterParams)
@@ -161,36 +167,104 @@ func renderClusterParams(cmd *cobra.Command, clusterName string, componentNames 
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to parse component map")
 	}
-	componentDefaultsMerged := "{"
+
+	// Filter components based on enable field
+	// If enable field is missing, default to true (backward compatible)
+	// If enable is false, skip the component
+	filteredComponentMap := make(map[string]componentDef)
+	for key, value := range componentMap {
+		enabled := true // default to enabled for backward compatibility
+
+		if value.Enable != nil {
+			// Check if it's a boolean
+			if enableBool, ok := value.Enable.(bool); ok {
+				enabled = enableBool
+			} else {
+				// If not a boolean, it should have been evaluated by jsonnet already
+				// This shouldn't happen in normal cases, but log a warning
+				log.Warn().Str("component", key).Msg("Enable field is not a boolean, defaulting to enabled")
+			}
+		}
+
+		if enabled {
+			filteredComponentMap[key] = value
+		} else {
+			log.Debug().Str("component", key).Msg("renderClusterParams: Component disabled by enable field")
+		}
+	}
+	componentMap = filteredComponentMap
+
+	// Build list of components to process
+	// If componentNames is provided, use that list; otherwise use all components from componentMap
+	componentsToProcess := make(map[string]componentDef)
 	if len(componentNames) > 0 {
-		// we are passed a list of components
+		// Only include specified components
 		for _, key := range componentNames {
 			if value, ok := componentMap[key]; ok {
-				path := baseDir + "/" + value.Path + "/params.jsonnet"
-				filec, err := os.ReadFile(path)
-				if err != nil {
-					log.Fatal().Err(err).Msg("Error reading " + path)
-				}
-				componentDefaultsMerged = componentDefaultsMerged + fmt.Sprintf("'%s': %s,", key, string(filec))
+				componentsToProcess[key] = value
 			}
 		}
 	} else {
-		// all components
+		// Use all components, but filter by componentName if set (legacy behavior)
 		for key, value := range componentMap {
 			if componentName != "" && key != componentName {
 				continue
 			}
-			path := baseDir + "/" + value.Path + "/params.jsonnet"
-			filec, err := os.ReadFile(path)
-			if err != nil {
-				log.Fatal().Err(err).Msg("Error reading " + path)
+			componentsToProcess[key] = value
+		}
+	}
+
+	// Process each component
+	componentDefaultsMerged := "{"
+	for key, value := range componentsToProcess {
+		// Load component params.jsonnet
+		paramsPath := baseDir + "/" + value.Path + "/params.jsonnet"
+		paramsContent, err := os.ReadFile(paramsPath)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Error reading " + paramsPath)
+		}
+
+		// Determine component base name from path (e.g., "components/services/standard_service" -> "standard_service")
+		componentBaseName := filepath.Base(value.Path)
+
+		// Check for instance-specific params in global instances directory
+		// First try: instances/<component_base_name>/<instance_name>.jsonnet
+		// Second try: instances/<instance_name>.jsonnet
+		var instancePath string
+		var instanceContent []byte
+
+		instancePathWithSubdir := baseDir + "/instances/" + componentBaseName + "/" + key + ".jsonnet"
+		instanceContent, err = os.ReadFile(instancePathWithSubdir)
+		if err == nil {
+			instancePath = instancePathWithSubdir
+		} else if os.IsNotExist(err) {
+			// Try without subdirectory
+			instancePathNoSubdir := baseDir + "/instances/" + key + ".jsonnet"
+			instanceContent, err = os.ReadFile(instancePathNoSubdir)
+			if err == nil {
+				instancePath = instancePathNoSubdir
 			}
-			componentDefaultsMerged = componentDefaultsMerged + fmt.Sprintf("'%s': %s,", key, string(filec))
+		}
+
+		if err == nil {
+			// Instance file exists - merge params.jsonnet + instance.jsonnet
+			log.Debug().Str("component", key).Str("instance", instancePath).Msg("Loading instance parameters")
+			componentDefaultsMerged = componentDefaultsMerged + "'" + key + "'" + ": (" + string(paramsContent) + ") + (" + string(instanceContent) + "),"
+		} else if os.IsNotExist(err) {
+			// Instance file doesn't exist - use only params.jsonnet (fallback to existing behavior)
+			componentDefaultsMerged = componentDefaultsMerged + "'" + key + "': " + string(paramsContent) + ","
+		} else {
+			// Other error reading instance file
+			log.Fatal().Err(err).Msg("Error reading instance file")
 		}
 	}
 	componentDefaultsMerged = componentDefaultsMerged + "}"
 
-	compParams = renderJsonnet(cmd, params, "", prune, componentDefaultsMerged, "componentparams")
+	// we replace _components with the filtered list
+	componentMapJson, _ := json.Marshal(componentMap)
+
+	// compParams is a json string
+	compParams = renderJsonnet(cmd, params, "{ _components: "+string(componentMapJson)+"}", prune, componentDefaultsMerged, "componentparams")
 
 	return compParams
 }
